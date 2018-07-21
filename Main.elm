@@ -69,7 +69,7 @@ update msg model =
                     Empty ->
                         case model.moveinprogress of
                             NoClick ->
-                                if actualMill location (playerLocations (model.counter + 1 |> whoseTurn) model.board) then
+                                if actualMill location (playerLocations (model.counter |> whoseTurn) model.board) then
                                     { board = occupyLocation (model.counter |> whoseTurn) location model.board
                                     , moveinprogress = FirstClick location
                                     , counter = model.counter
@@ -142,7 +142,7 @@ update msg model =
 actualMill : Location -> List Location -> Bool
 actualMill location playerlocations =
     any
-        (\mill -> all (\loc -> member loc playerlocations) mill)
+        (\mill -> all (\loc -> member loc ([ location ] ++ playerlocations)) mill)
         (List.filterMap
             (\mill ->
                 if member location mill then
@@ -375,9 +375,16 @@ main =
 
 tests : List Bool
 tests =
-    [ actualMill ( Y2, X3, Z1 ) [ ( Y2, X3, Z2 ), ( Y1, X3, Z2 ), ( Y2, X3, Z1 ), ( Y1, X3, Z1 ), ( Y2, X3, Z1 ), ( Y3, X3, Z1 ), ( Y1, X1, Z3 ) ]
-    , actualMill ( Y2, X3, Z1 ) [ ( Y3, X2, Z1 ), ( Y3, X2, Z2 ), ( Y3, X2, Z1 ) ] == False
-    , actualMill ( Y3, X2, Z1 ) [ ( Y1, X1, Z2 ), ( Y1, X2, Z2 ), ( Y1, X3, Z2 ), ( Y2, X3, Z2 ), ( Y1, X3, Z2 ) ] == False
+    [ update (Click ( Y1, X1, Z1 ))
+        { board = [ Empty, B, Empty, Empty, Empty, Empty, Empty, Empty, B, W, Empty, Empty, Empty, Empty, Empty, W, B, Empty, Empty, Empty, Empty, Empty, Empty, Empty ]
+        , moveinprogress = NoClick
+        , counter = 5
+        }
+        == { board = [ W, B, Empty, Empty, Empty, Empty, Empty, Empty, B, W, Empty, Empty, Empty, Empty, Empty, W, B, Empty, Empty, Empty, Empty, Empty, Empty, Empty ]
+           , moveinprogress = FirstClick ( Y1, X1, Z1 )
+           , counter = 5
+           }
+    , actualMill ( Y1, X1, Z1 ) [ ( Y1, X2, Z1 ), ( Y1, X3, Z1 ) ]
     ]
 
 
