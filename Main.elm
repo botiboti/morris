@@ -4,6 +4,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import List exposing (..)
+import List.Extra
 
 
 type alias Model =
@@ -14,7 +15,7 @@ type alias Model =
 
 
 type alias Location =
-    ( Row, Column, Ring )
+    ( Column, Row, Ring )
 
 
 type alias Board =
@@ -69,17 +70,20 @@ update msg model =
                     Empty ->
                         case model.moveinprogress of
                             NoClick ->
-                                if actualMill location (playerLocations (model.counter |> whoseTurn) model.board) then
-                                    { board = occupyLocation (model.counter |> whoseTurn) location model.board
-                                    , moveinprogress = FirstClick location
-                                    , counter = model.counter
-                                    }
+                                { board = occupyLocation (model.counter |> whoseTurn) location model.board
+                                , moveinprogress =
+                                    if actualMill location <| playerLocations (model.counter |> whoseTurn) model.board then
+                                        FirstClick location
 
-                                else
-                                    { board = occupyLocation (model.counter |> whoseTurn) location model.board
-                                    , moveinprogress = NoClick
-                                    , counter = model.counter + 1
-                                    }
+                                    else
+                                        NoClick
+                                , counter =
+                                    if actualMill location <| playerLocations (model.counter |> whoseTurn) model.board then
+                                        model.counter
+
+                                    else
+                                        model.counter + 1
+                                }
 
                             _ ->
                                 model
@@ -87,7 +91,7 @@ update msg model =
                     _ ->
                         case model.moveinprogress of
                             FirstClick irrelevant ->
-                                if isRightElimination location model then
+                                if isRightEliminationm location model then
                                     { board = deleteLocation location model.board
                                     , moveinprogress = NoClick
                                     , counter = model.counter + 1
@@ -99,44 +103,101 @@ update msg model =
                             _ ->
                                 model
 
-            else if playerOnLocation location model.board == (whoseTurn <| model.counter) then
-                { board = model.board
-                , moveinprogress = FirstClick location
-                , counter = model.counter
-                }
+            else
+                case playerOnLocation location model.board == (whoseTurn <| model.counter) of
+                    True ->
+                        { board = model.board
+                        , moveinprogress = FirstClick location
+                        , counter = model.counter
+                        }
 
-            else if
-                playerOnLocation location model.board
-                    == Empty
-                    && (case model.moveinprogress of
-                            FirstClick location ->
-                                True
+                    False ->
+                        case playerOnLocation location model.board of
+                            Empty ->
+                                if length (playerLocations (model.counter |> whoseTurn) model.board) == 3 then
+                                    if
+                                        (case model.moveinprogress of
+                                            FirstClick x ->
+                                                True
+
+                                            _ ->
+                                                False
+                                        )
+                                            && isNewMill location (playerLocations (model.counter |> whoseTurn) (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board))
+                                    then
+                                        { board = occupyLocation (model.counter |> whoseTurn) location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
+                                        , moveinprogress = SecondClick (moveInProgressToLocation model.moveinprogress) location
+                                        , counter = model.counter
+                                        }
+
+                                    else if
+                                        case model.moveinprogress of
+                                            FirstClick x ->
+                                                True
+
+                                            _ ->
+                                                False
+                                    then
+                                        { board = occupyLocation (model.counter |> whoseTurn) location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
+                                        , moveinprogress = NoClick
+                                        , counter = model.counter + 1
+                                        }
+
+                                    else
+                                        model
+
+                                else if
+                                    (case model.moveinprogress of
+                                        FirstClick x ->
+                                            True
+
+                                        _ ->
+                                            False
+                                    )
+                                        && allowedMove location (moveInProgressToLocation model.moveinprogress) model
+                                        && isNewMill location (playerLocations (model.counter |> whoseTurn) (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board))
+                                then
+                                    { board = occupyLocation (model.counter |> whoseTurn) location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
+                                    , moveinprogress = SecondClick (moveInProgressToLocation model.moveinprogress) location
+                                    , counter = model.counter
+                                    }
+
+                                else if
+                                    (case model.moveinprogress of
+                                        FirstClick x ->
+                                            True
+
+                                        _ ->
+                                            False
+                                    )
+                                        && allowedMove location (moveInProgressToLocation model.moveinprogress) model
+                                then
+                                    { board = occupyLocation (model.counter |> whoseTurn) location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
+                                    , moveinprogress = NoClick
+                                    , counter = model.counter + 1
+                                    }
+
+                                else
+                                    model
 
                             _ ->
-                                False
-                       )
-                    && allowedMove (moveInProgressToLocation model.moveinprogress) location
-            then
-                { board =
-                    occupyLocation (model.counter |> whoseTurn)
-                        location
-                        (deleteLocation
-                            (moveInProgressToLocation <|
-                                model.moveinprogress
-                            )
-                            model.board
-                        )
-                , moveinprogress =
-                    SecondClick
-                        (moveInProgressToLocation <|
-                            model.moveinprogress
-                        )
-                        location
-                , counter = model.counter + 1
-                }
+                                if
+                                    (case model.moveinprogress of
+                                        SecondClick x y ->
+                                            True
 
-            else
-                model
+                                        _ ->
+                                            False
+                                    )
+                                        && isRightEliminationm location model
+                                then
+                                    { board = deleteLocation location model.board
+                                    , moveinprogress = NoClick
+                                    , counter = model.counter + 1
+                                    }
+
+                                else
+                                    model
 
 
 actualMill : Location -> List Location -> Bool
@@ -155,9 +216,46 @@ actualMill location playerlocations =
         )
 
 
+isNewMill : Location -> List Location -> Bool
+isNewMill location playerlocations =
+    any
+        (\mill -> member location mill)
+        (List.filterMap
+            (\mill ->
+                if all (\loc -> member loc ([ location ] ++ playerlocations)) mill then
+                    Just mill
+
+                else
+                    Nothing
+            )
+            allMills
+        )
+
+
+actualMillModed : Location -> List Location -> Bool
+actualMillModed location playerlocations =
+    any
+        (\mill -> all (\loc -> member loc playerlocations) mill)
+        (List.filterMap
+            (\mill ->
+                if member location mill then
+                    Just mill
+
+                else
+                    Nothing
+            )
+            allMills
+        )
+
+
 isRightElimination : Location -> Model -> Bool
 isRightElimination loc model =
     playerOnLocation loc model.board == (whoseTurn <| model.counter)
+
+
+isRightEliminationm : Location -> Model -> Bool
+isRightEliminationm loc model =
+    (playerOnLocation loc model.board == (whoseTurn <| model.counter + 1)) && not (actualMillModed loc <| playerLocations (whoseTurn <| model.counter + 1) model.board)
 
 
 deleteLocation : Location -> Board -> Board
@@ -178,9 +276,9 @@ moveInProgressToLocation mip =
 corners : List Location
 corners =
     List.filterMap
-        (\( y, x, z ) ->
-            if any (\h -> h == ( y, x )) [ ( Y1, X1 ), ( Y1, X3 ), ( Y3, X3 ), ( Y3, X1 ) ] then
-                Just ( y, x, z )
+        (\( x, y, z ) ->
+            if any (\h -> h == ( x, y )) [ ( X1, Y1 ), ( X3, Y1 ), ( X3, Y3 ), ( X1, Y3 ) ] then
+                Just ( x, y, z )
 
             else
                 Nothing
@@ -191,9 +289,9 @@ corners =
 middles : List Location
 middles =
     List.filterMap
-        (\( y, x, z ) ->
-            if any (\h -> h == ( y, x )) [ ( Y1, X2 ), ( Y2, X1 ), ( Y3, X2 ), ( Y2, X3 ) ] then
-                Just ( y, x, z )
+        (\( x, y, z ) ->
+            if any (\h -> h == ( x, y )) [ ( X2, Y1 ), ( X1, Y2 ), ( X2, Y3 ), ( X3, Y2 ) ] then
+                Just ( x, y, z )
 
             else
                 Nothing
@@ -201,25 +299,33 @@ middles =
         allLocations
 
 
-allowedMove : Location -> Location -> Bool
-allowedMove ( y1, x1, z1 ) ( y2, x2, z2 ) =
-    if member ( y1, x1, z1 ) middles then
-        if member ( y2, x2, z2 ) middles && ( y1, x1 ) == ( y2, x2 ) then
-            True
+allowedMove : Location -> Location -> Model -> Bool
+allowedMove ( x1, y1, z1 ) ( x2, y2, z2 ) model =
+    case member ( x1, y1, z1 ) middles of
+        True ->
+            case member ( x2, y2, z2 ) middles of
+                True ->
+                    if (z1 == Z1 && z2 == Z3) || (z1 == Z3 && z2 == Z1) then
+                        False
 
-        else
-            ( x1, z1 ) == ( x2, z2 ) || ( y1, z1 ) == ( y2, z2 )
+                    else
+                        ( x1, y1 ) == ( x2, y2 )
 
-    else
-        member ( y2, x2, z2 ) middles && ( x1, z1 ) == ( x2, z2 ) || ( y1, z1 ) == ( y2, z2 )
+                False ->
+                    ( x1, z1 ) == ( x2, z2 ) || ( y1, z1 ) == ( y2, z2 )
+
+        False ->
+            member ( x2, y2, z2 ) middles && ( x1, z1 ) == ( x2, z2 ) || ( y1, z1 ) == ( y2, z2 )
 
 
 view : Model -> Html Msg
 view model =
     div [ style [ ( "font-family", "monospace" ), ( "font-size", "42px" ) ] ]
-        [ viewModel model.board
-        , viewAlls
+        [ --viewModel model.board
+          div [ style [ ( "transform", "scaleX(2)" ), ( "transform-origin", "0 0" ) ] ] [ viewBoard model.board ]
 
+        --, div [] [ text (toString model.moveinprogress) ]
+        --, viewAlls
         --, div [] [ text <| playerToString <| winnerPlayer model ]
         --, button [ onClick Reset ] [ text "New Game" ]
         , viewTests
@@ -231,21 +337,109 @@ viewModel board =
     div [] (List.indexedMap (\i p -> viewPlayer p (getLocation i)) board)
 
 
+viewBoard : Board -> Html Msg
+viewBoard board =
+    let
+        get n =
+            board |> List.Extra.getAt n |> Maybe.withDefault Empty
+
+        loc n =
+            viewPlayer (get n) (getLocation n)
+    in
+    div []
+        [ div
+            []
+            [ loc 0
+            , text "—"
+            , text "—"
+            , loc 1
+            , text "—"
+            , text "—"
+            , loc 2
+            ]
+        , div []
+            [ text "│"
+            , loc 3
+            , text "—"
+            , loc 4
+            , text "—"
+            , loc 5
+            , text "│"
+            ]
+        , div []
+            [ text "│"
+            , text "│"
+            , loc 6
+            , loc 7
+            , loc 8
+            , text "│"
+            , text "│"
+            ]
+        , div []
+            [ loc 9
+            , loc 10
+            , loc 11
+            , text " "
+            , loc 12
+            , loc 13
+            , loc 14
+            ]
+        , div []
+            [ text "│"
+            , text "│"
+            , loc 15
+            , loc 16
+            , loc 17
+            , text "│"
+            , text "│"
+            ]
+        , div []
+            [ text "│"
+            , loc 18
+            , text "—"
+            , loc 19
+            , text "—"
+            , loc 20
+            , text "│"
+            ]
+        , div []
+            [ loc 21
+            , text "—"
+            , text "—"
+            , loc 22
+            , text "—"
+            , text "—"
+            , loc 23
+            ]
+        ]
+
+
 viewPlayer : Player -> Location -> Html Msg
 viewPlayer player loc =
     span
         [ onClick (Click loc)
         , style
-            [ ( "border-right", "2px solid black" )
-            , ( "border-bottom", "2px solid black" )
-            , ( "color"
-              , "black"
-              )
+            [ ( "color", "black" )
             ]
         ]
-        [ text
-            (playerToString <| player)
+        [ --text (playerToString player)
+          playerToPiece player
+
+        --, span [ style [ ( "font-size", "0.3em" ) ] ] [ text (loc |> (\( y, x, z ) -> toString y ++ toString x ++ toString z)) ]
         ]
+
+
+playerToPiece : Player -> Html Msg
+playerToPiece player =
+    case player of
+        Empty ->
+            text "·"
+
+        W ->
+            img [ src "2.jpg", width 23, height 30 ] []
+
+        B ->
+            img [ src "1.jpg", width 23, height 30 ] []
 
 
 getLocation : Int -> Location
@@ -255,14 +449,14 @@ getLocation i =
             a
 
         Nothing ->
-            Debug.crash "HAHA"
+            ( X1, Y1, Z1 )
 
 
 playerToString : Player -> String
 playerToString player =
     case player of
         Empty ->
-            "_"
+            "·"
 
         W ->
             "W"
@@ -373,18 +567,57 @@ main =
         }
 
 
+mkBoard : List Location -> List Location -> List Player
+mkBoard ws bs =
+    repeat 24 Empty
+        |> indexedMap
+            (\i l ->
+                if member (getLocation i) ws then
+                    W
+
+                else if member (getLocation i) bs then
+                    B
+
+                else
+                    Empty
+            )
+
+
 tests : List Bool
 tests =
-    [ update (Click ( Y1, X1, Z1 ))
-        { board = [ Empty, B, Empty, Empty, Empty, Empty, Empty, Empty, B, W, Empty, Empty, Empty, Empty, Empty, W, B, Empty, Empty, Empty, Empty, Empty, Empty, Empty ]
-        , moveinprogress = NoClick
-        , counter = 5
-        }
-        == { board = [ W, B, Empty, Empty, Empty, Empty, Empty, Empty, B, W, Empty, Empty, Empty, Empty, Empty, W, B, Empty, Empty, Empty, Empty, Empty, Empty, Empty ]
-           , moveinprogress = FirstClick ( Y1, X1, Z1 )
+    let
+        m1 =
+            { board = mkBoard [ ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y1, Z3 ), ( X3, Y2, Z1 ) ]
+            , moveinprogress = NoClick
+            , counter = 4
+            }
+
+        m2 =
+            update (Click ( X1, Y1, Z1 )) m1
+
+        m3 =
+            update (Click ( X3, Y1, Z3 )) m2
+    in
+    [ m2
+        == { board = mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y1, Z3 ), ( X3, Y2, Z1 ) ]
+           , moveinprogress = FirstClick ( X1, Y1, Z1 )
+           , counter = 4
+           }
+    , m3
+        == { board = mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y2, Z1 ) ]
+           , moveinprogress = NoClick
            , counter = 5
            }
-    , actualMill ( Y1, X1, Z1 ) [ ( Y1, X2, Z1 ), ( Y1, X3, Z1 ) ]
+    , actualMill ( X1, Y1, Z1 ) [ ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ]
+    , actualMill ( X2, Y3, Z2 ) [ ( X3, Y3, Z2 ), ( X2, Y3, Z1 ) ] == False
+
+    --, allowedMove ( X1, Y2, Z2 ) ( X3, Y2, Z2 ) == False
+    --, allowedMove ( X2, Y1, Z3 ) ( X2, Y3, Z3 ) == False
+    --, allowedMove ( X2, Y1, Z3 ) ( X2, Y1, Z2 )
+    --, allowedMove ( X1, Y1, Z1 ) ( X3, Y3, Z1 ) == False
+    --, allowedMove ( X1, Y2, Z3 ) ( X1, Y1, Z3 )
+    , always False "ha 3 marad, ugral"
+    , always False "win detection (<2 pieces, blocked)"
     ]
 
 
@@ -406,18 +639,20 @@ viewTests =
                   )
                 ]
             ]
-            [ text
-                ("Tests: "
-                    ++ (if pass then
-                            "✔"
-
-                        else
-                            "✘"
-                       )
-                )
+            [ text ("Tests: " ++ toCheck pass)
             ]
-        , div [] [ text <| toString tests ]
+        , div [] [ text <| String.join "" (List.map toCheck tests) ]
         ]
+
+
+toCheck : Bool -> String
+toCheck bool =
+    case bool of
+        True ->
+            "✔"
+
+        False ->
+            "✘"
 
 
 viewAlls : Html Msg
@@ -425,14 +660,14 @@ viewAlls =
     div [] (List.map (\x -> text <| toString x) allLocations)
 
 
-allRows : List Row
-allRows =
-    [ Y1, Y2, Y3 ]
-
-
 allColumns : List Column
 allColumns =
     [ X1, X2, X3 ]
+
+
+allRows : List Row
+allRows =
+    [ Y1, Y2, Y3 ]
 
 
 allRings : List Ring
@@ -442,51 +677,49 @@ allRings =
 
 allMills : List (List Location)
 allMills =
-    [ [ ( Y1, X1, Z1 ), ( Y1, X2, Z1 ), ( Y1, X3, Z1 ) ]
-    , [ ( Y1, X1, Z1 ), ( Y2, X1, Z1 ), ( Y3, X1, Z1 ) ]
-    , [ ( Y3, X1, Z1 ), ( Y3, X2, Z1 ), ( Y3, X3, Z1 ) ]
-    , [ ( Y1, X3, Z1 ), ( Y2, X3, Z1 ), ( Y3, X3, Z1 ) ]
-    , [ ( Y1, X1, Z2 ), ( Y1, X2, Z2 ), ( Y1, X3, Z2 ) ]
-    , [ ( Y1, X1, Z2 ), ( Y2, X1, Z2 ), ( Y3, X1, Z2 ) ]
-    , [ ( Y3, X1, Z2 ), ( Y3, X2, Z2 ), ( Y3, X3, Z2 ) ]
-    , [ ( Y1, X3, Z2 ), ( Y2, X3, Z2 ), ( Y3, X3, Z2 ) ]
-    , [ ( Y1, X1, Z3 ), ( Y1, X2, Z3 ), ( Y1, X3, Z3 ) ]
-    , [ ( Y1, X1, Z3 ), ( Y2, X1, Z3 ), ( Y3, X1, Z3 ) ]
-    , [ ( Y3, X1, Z3 ), ( Y3, X2, Z3 ), ( Y3, X3, Z3 ) ]
-    , [ ( Y1, X3, Z3 ), ( Y2, X3, Z3 ), ( Y3, X3, Z3 ) ]
-    , [ ( Y1, X2, Z1 ), ( Y1, X2, Z2 ), ( Y1, X2, Z3 ) ]
-    , [ ( Y2, X1, Z1 ), ( Y2, X1, Z2 ), ( Y2, X1, Z3 ) ]
-    , [ ( Y3, X2, Z1 ), ( Y3, X2, Z2 ), ( Y3, X2, Z1 ) ]
-    , [ ( Y2, X3, Z1 ), ( Y2, X3, Z2 ), ( Y2, X3, Z1 ) ]
+    [ [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ]
+    , [ ( X1, Y1, Z1 ), ( X1, Y2, Z1 ), ( X1, Y3, Z1 ) ]
+    , [ ( X1, Y3, Z1 ), ( X2, Y3, Z1 ), ( X3, Y3, Z1 ) ]
+    , [ ( X3, Y1, Z1 ), ( X3, Y2, Z1 ), ( X3, Y3, Z1 ) ]
+    , [ ( X1, Y1, Z2 ), ( X2, Y1, Z2 ), ( X3, Y1, Z2 ) ]
+    , [ ( X1, Y1, Z2 ), ( X1, Y2, Z2 ), ( X1, Y3, Z2 ) ]
+    , [ ( X1, Y3, Z2 ), ( X2, Y3, Z2 ), ( X3, Y3, Z2 ) ]
+    , [ ( X3, Y1, Z2 ), ( X3, Y2, Z2 ), ( X3, Y3, Z2 ) ]
+    , [ ( X1, Y1, Z3 ), ( X2, Y1, Z3 ), ( X3, Y1, Z3 ) ]
+    , [ ( X1, Y1, Z3 ), ( X1, Y2, Z3 ), ( X1, Y3, Z3 ) ]
+    , [ ( X1, Y3, Z3 ), ( X2, Y3, Z3 ), ( X3, Y3, Z3 ) ]
+    , [ ( X3, Y1, Z3 ), ( X3, Y2, Z3 ), ( X3, Y3, Z3 ) ]
+    , [ ( X2, Y1, Z1 ), ( X2, Y1, Z2 ), ( X2, Y1, Z3 ) ]
+    , [ ( X1, Y2, Z1 ), ( X1, Y2, Z2 ), ( X1, Y2, Z3 ) ]
+    , [ ( X2, Y3, Z1 ), ( X2, Y3, Z2 ), ( X2, Y3, Z3 ) ]
+    , [ ( X3, Y2, Z1 ), ( X3, Y2, Z2 ), ( X3, Y2, Z3 ) ]
     ]
-
-
-
---(r, c, ri)
 
 
 allLocations : List Location
 allLocations =
-    List.filterMap
-        (\( x, y, z ) ->
-            if x == Y2 && y == X2 then
-                Nothing
-
-            else
-                Just ( x, y, z )
-        )
-        (concat
-            (concat
-                (List.map
-                    (\c ->
-                        List.map
-                            (\r ->
-                                List.map (\ri -> ( r, c, ri ))
-                                    allRings
-                            )
-                            allRows
-                    )
-                    allColumns
-                )
-            )
-        )
+    [ ( X1, Y1, Z1 )
+    , ( X2, Y1, Z1 )
+    , ( X3, Y1, Z1 )
+    , ( X1, Y1, Z2 )
+    , ( X2, Y1, Z2 )
+    , ( X3, Y1, Z2 )
+    , ( X1, Y1, Z3 )
+    , ( X2, Y1, Z3 )
+    , ( X3, Y1, Z3 )
+    , ( X1, Y2, Z1 )
+    , ( X1, Y2, Z2 )
+    , ( X1, Y2, Z3 )
+    , ( X3, Y2, Z3 )
+    , ( X3, Y2, Z2 )
+    , ( X3, Y2, Z1 )
+    , ( X1, Y3, Z3 )
+    , ( X2, Y3, Z3 )
+    , ( X3, Y3, Z3 )
+    , ( X1, Y3, Z2 )
+    , ( X2, Y3, Z2 )
+    , ( X3, Y3, Z2 )
+    , ( X1, Y3, Z1 )
+    , ( X2, Y3, Z1 )
+    , ( X3, Y3, Z1 )
+    ]
