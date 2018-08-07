@@ -43,7 +43,7 @@ update msg model =
                     _ ->
                         case model.moveinprogress of
                             FirstClick irrelevant ->
-                                if isRightEliminationm location model then
+                                if isRightElimination location model then
                                     { board = deleteLocation location model.board
                                     , moveinprogress = NoClick
                                     , counter = model.counter + 1
@@ -144,7 +144,7 @@ update msg model =
                                         _ ->
                                             False
                                     )
-                                        && isRightEliminationm location model
+                                        && isRightElimination location model
                                 then
                                     { board = deleteLocation location model.board
                                     , moveinprogress = NoClick
@@ -231,8 +231,8 @@ actualMillModed location playerlocations =
         )
 
 
-isRightEliminationm : Location -> Model -> Bool
-isRightEliminationm loc model =
+isRightElimination : Location -> Model -> Bool
+isRightElimination loc model =
     if
         all
             (\playerloc -> any (\mill -> member playerloc mill && all (\loc -> member loc (playerLocations (whoseTurn <| model.counter + 1) model.board)) mill) allMills)
@@ -573,6 +573,12 @@ mkBoard ws bs =
 tests : List Bool
 tests =
     let
+        m0 =
+            { board = mkBoard [ ( X3, Y1, Z1 ), ( X3, Y2, Z1 ), ( X3, Y3, Z1 ) ] [ ( X1, Y1, Z3 ), ( X2, Y1, Z3 ), ( X3, Y1, Z3 ) ]
+            , moveinprogress = SecondClick ( X2, Y1, Z2 ) ( X2, Y1, Z3 )
+            , counter = 53
+            }
+
         m1 =
             { board = mkBoard [ ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y1, Z3 ), ( X3, Y2, Z1 ) ]
             , moveinprogress = NoClick
@@ -584,6 +590,12 @@ tests =
 
         m3 =
             update (Click ( X3, Y1, Z3 )) m2
+
+        m4 =
+            { board = mkBoard [ ( X3, Y1, Z1 ), ( X3, Y2, Z1 ), ( X3, Y3, Z1 ), ( X1, Y3, Z3 ), ( X2, Y3, Z3 ), ( X1, Y2, Z3 ) ] [ ( X3, Y1, Z2 ), ( X3, Y2, Z2 ), ( X3, Y3, Z2 ), ( X3, Y1, Z3 ), ( X3, Y2, Z3 ), ( X3, Y3, Z3 ) ]
+            , moveinprogress = FirstClick ( X3, Y1, Z3 )
+            , counter = 13
+            }
     in
     [ m2
         == { board = mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y1, Z3 ), ( X3, Y2, Z1 ) ]
@@ -602,9 +614,8 @@ tests =
     , allowedMove ( X2, Y1, Z3 ) ( X2, Y1, Z2 )
     , allowedMove ( X1, Y1, Z1 ) ( X3, Y3, Z1 ) == False
     , allowedMove ( X1, Y2, Z3 ) ( X1, Y1, Z3 )
-    , always False "malombol levenni ha csak malom van"
-    , always False "ha 3 marad, ugral"
-    , always False "win detection (<2 pieces, blocked)"
+    , isRightElimination ( X3, Y1, Z1 ) m0
+    , isRightElimination ( X3, Y1, Z1 ) m4 == False
     ]
 
 
