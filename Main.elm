@@ -160,10 +160,10 @@ isWin model =
     any
         identity
         (List.map
-            (\player -> length (playerLocations player model.board) < 2)
+            (\player -> length (playerLocations player model.board) < 3)
             [ W, B ]
         )
-        && not
+        || not
             (any
                 identity
                 (concat <|
@@ -172,7 +172,7 @@ isWin model =
                         (playerLocations W model.board)
                 )
             )
-        && not
+        || not
             (any
                 identity
                 (concat <|
@@ -573,12 +573,6 @@ mkBoard ws bs =
 tests : List Bool
 tests =
     let
-        m0 =
-            { board = mkBoard [ ( X3, Y1, Z1 ), ( X3, Y2, Z1 ), ( X3, Y3, Z1 ) ] [ ( X1, Y1, Z3 ), ( X2, Y1, Z3 ), ( X3, Y1, Z3 ) ]
-            , moveinprogress = SecondClick ( X2, Y1, Z2 ) ( X2, Y1, Z3 )
-            , counter = 53
-            }
-
         m1 =
             { board = mkBoard [ ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y1, Z3 ), ( X3, Y2, Z1 ) ]
             , moveinprogress = NoClick
@@ -592,9 +586,24 @@ tests =
             update (Click ( X3, Y1, Z3 )) m2
 
         m4 =
+            { board = mkBoard [ ( X3, Y1, Z1 ), ( X3, Y2, Z1 ), ( X3, Y3, Z1 ) ] [ ( X1, Y1, Z3 ), ( X2, Y1, Z3 ), ( X3, Y1, Z3 ) ]
+            , moveinprogress = SecondClick ( X2, Y1, Z2 ) ( X2, Y1, Z3 )
+            , counter = 53
+            }
+
+        m5 =
             { board = mkBoard [ ( X3, Y1, Z1 ), ( X3, Y2, Z1 ), ( X3, Y3, Z1 ), ( X1, Y3, Z3 ), ( X2, Y3, Z3 ), ( X1, Y2, Z3 ) ] [ ( X3, Y1, Z2 ), ( X3, Y2, Z2 ), ( X3, Y3, Z2 ), ( X3, Y1, Z3 ), ( X3, Y2, Z3 ), ( X3, Y3, Z3 ) ]
             , moveinprogress = FirstClick ( X3, Y1, Z3 )
             , counter = 13
+            }
+
+        m6 =
+            update (Click ( X3, Y1, Z1 )) m4
+
+        m7 =
+            { board = mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ), ( X1, Y2, Z1 ) ] [ ( X3, Y2, Z1 ), ( X2, Y1, Z2 ), ( X1, Y3, Z1 ), ( X1, Y2, Z2 ) ]
+            , moveinprogress = NoClick
+            , counter = 40
             }
     in
     [ m2
@@ -614,8 +623,11 @@ tests =
     , allowedMove ( X2, Y1, Z3 ) ( X2, Y1, Z2 )
     , allowedMove ( X1, Y1, Z1 ) ( X3, Y3, Z1 ) == False
     , allowedMove ( X1, Y2, Z3 ) ( X1, Y1, Z3 )
-    , isRightElimination ( X3, Y1, Z1 ) m0
-    , isRightElimination ( X3, Y1, Z1 ) m4 == False
+    , isRightElimination ( X3, Y1, Z1 ) m4
+    , isRightElimination ( X3, Y1, Z1 ) m5 == False
+    , isWin m4 == False
+    , isWin m6
+    , isWin m7
     ]
 
 
