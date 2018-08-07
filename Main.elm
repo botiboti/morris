@@ -24,13 +24,13 @@ update msg model =
                             NoClick ->
                                 { board = occupyLocation (model.counter |> whoseTurn) location model.board
                                 , moveinprogress =
-                                    if actualMill location <| playerLocations (model.counter |> whoseTurn) model.board then
+                                    if isNewMill location <| playerLocations (model.counter |> whoseTurn) model.board then
                                         FirstClick location
 
                                     else
                                         NoClick
                                 , counter =
-                                    if actualMill location <| playerLocations (model.counter |> whoseTurn) model.board then
+                                    if isNewMill location <| playerLocations (model.counter |> whoseTurn) model.board then
                                         model.counter
 
                                     else
@@ -54,6 +54,9 @@ update msg model =
 
                             _ ->
                                 model
+
+            else if isWin model then
+                model
 
             else
                 case playerOnLocation location model.board == (whoseTurn <| model.counter) of
@@ -106,7 +109,7 @@ update msg model =
                                         _ ->
                                             False
                                     )
-                                        && allowedMove location (moveInProgressToLocation model.moveinprogress) model
+                                        && allowedMove location (moveInProgressToLocation model.moveinprogress)
                                         && isNewMill location (playerLocations (model.counter |> whoseTurn) (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board))
                                 then
                                     { board = occupyLocation (model.counter |> whoseTurn) location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
@@ -122,7 +125,7 @@ update msg model =
                                         _ ->
                                             False
                                     )
-                                        && allowedMove location (moveInProgressToLocation model.moveinprogress) model
+                                        && allowedMove location (moveInProgressToLocation model.moveinprogress)
                                 then
                                     { board = occupyLocation (model.counter |> whoseTurn) location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
                                     , moveinprogress = NoClick
@@ -150,6 +153,34 @@ update msg model =
 
                                 else
                                     model
+
+
+isWin : Model -> Bool
+isWin model =
+    any
+        identity
+        (List.map
+            (\player -> length (playerLocations player model.board) < 2)
+            [ W, B ]
+        )
+        && not
+            (any
+                identity
+                (concat <|
+                    List.map
+                        (\playerloc -> List.map (\emptyloc -> allowedMove playerloc emptyloc) (playerLocations Empty model.board))
+                        (playerLocations W model.board)
+                )
+            )
+        && not
+            (any
+                identity
+                (concat <|
+                    List.map
+                        (\playerloc -> List.map (\emptyloc -> allowedMove playerloc emptyloc) (playerLocations Empty model.board))
+                        (playerLocations B model.board)
+                )
+            )
 
 
 actualMill : Location -> List Location -> Bool
@@ -200,14 +231,18 @@ actualMillModed location playerlocations =
         )
 
 
-isRightElimination : Location -> Model -> Bool
-isRightElimination loc model =
-    playerOnLocation loc model.board == (whoseTurn <| model.counter)
-
-
 isRightEliminationm : Location -> Model -> Bool
 isRightEliminationm loc model =
-    (playerOnLocation loc model.board == (whoseTurn <| model.counter + 1)) && not (actualMillModed loc <| playerLocations (whoseTurn <| model.counter + 1) model.board)
+    if
+        all
+            (\playerloc -> any (\mill -> member playerloc mill && all (\loc -> member loc (playerLocations (whoseTurn <| model.counter + 1) model.board)) mill) allMills)
+            (playerLocations (whoseTurn <| model.counter + 1) model.board)
+    then
+        True
+
+    else
+        (playerOnLocation loc model.board == (whoseTurn <| model.counter + 1))
+            && not (actualMillModed loc <| playerLocations (whoseTurn <| model.counter + 1) model.board)
 
 
 deleteLocation : Location -> Board -> Board
@@ -251,8 +286,8 @@ middles =
         allLocations
 
 
-allowedMove : Location -> Location -> Model -> Bool
-allowedMove ( x1, y1, z1 ) ( x2, y2, z2 ) model =
+allowedMove : Location -> Location -> Bool
+allowedMove ( x1, y1, z1 ) ( x2, y2, z2 ) =
     case member ( x1, y1, z1 ) middles of
         True ->
             case member ( x2, y2, z2 ) middles of
@@ -375,14 +410,14 @@ viewPlayer player loc =
             ]
         ]
         [ --text (playerToString player)
-          playerToPiece player
+          playerToPiece player loc
 
         --, span [ style [ ( "font-size", "0.3em" ) ] ] [ text (loc |> (\( y, x, z ) -> toString y ++ toString x ++ toString z)) ]
         ]
 
 
-playerToPiece : Player -> Html Msg
-playerToPiece player =
+playerToPiece : Player -> Location -> Html Msg
+playerToPiece player loc =
     case player of
         Empty ->
             text "·"
@@ -562,12 +597,12 @@ tests =
            }
     , actualMill ( X1, Y1, Z1 ) [ ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ]
     , actualMill ( X2, Y3, Z2 ) [ ( X3, Y3, Z2 ), ( X2, Y3, Z1 ) ] == False
-
-    --, allowedMove ( X1, Y2, Z2 ) ( X3, Y2, Z2 ) == False
-    --, allowedMove ( X2, Y1, Z3 ) ( X2, Y3, Z3 ) == False
-    --, allowedMove ( X2, Y1, Z3 ) ( X2, Y1, Z2 )
-    --, allowedMove ( X1, Y1, Z1 ) ( X3, Y3, Z1 ) == False
-    --, allowedMove ( X1, Y2, Z3 ) ( X1, Y1, Z3 )
+    , allowedMove ( X1, Y2, Z2 ) ( X3, Y2, Z2 ) == False
+    , allowedMove ( X2, Y1, Z3 ) ( X2, Y3, Z3 ) == False
+    , allowedMove ( X2, Y1, Z3 ) ( X2, Y1, Z2 )
+    , allowedMove ( X1, Y1, Z1 ) ( X3, Y3, Z1 ) == False
+    , allowedMove ( X1, Y2, Z3 ) ( X1, Y1, Z3 )
+    , always False "malombol levenni ha csak malom van"
     , always False "ha 3 marad, ugral"
     , always False "win detection (<2 pieces, blocked)"
     ]
