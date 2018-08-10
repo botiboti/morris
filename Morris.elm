@@ -1,10 +1,6 @@
 module Morris exposing (..)
 
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
 import List exposing (..)
-import List.Extra
 
 
 type alias Model =
@@ -119,6 +115,32 @@ allLocations =
     , ( X2, Y3, Z1 )
     , ( X3, Y3, Z1 )
     ]
+
+
+corners : List Location
+corners =
+    List.filterMap
+        (\( x, y, z ) ->
+            if any (\h -> h == ( x, y )) [ ( X1, Y1 ), ( X3, Y1 ), ( X3, Y3 ), ( X1, Y3 ) ] then
+                Just ( x, y, z )
+
+            else
+                Nothing
+        )
+        allLocations
+
+
+middles : List Location
+middles =
+    List.filterMap
+        (\( x, y, z ) ->
+            if any (\h -> h == ( x, y )) [ ( X2, Y1 ), ( X1, Y2 ), ( X2, Y3 ), ( X3, Y2 ) ] then
+                Just ( x, y, z )
+
+            else
+                Nothing
+        )
+        allLocations
 
 
 init : ( Model, Cmd Msg )
@@ -373,32 +395,6 @@ moveInProgressToLocation mip =
             Debug.crash "HAHA"
 
 
-corners : List Location
-corners =
-    List.filterMap
-        (\( x, y, z ) ->
-            if any (\h -> h == ( x, y )) [ ( X1, Y1 ), ( X3, Y1 ), ( X3, Y3 ), ( X1, Y3 ) ] then
-                Just ( x, y, z )
-
-            else
-                Nothing
-        )
-        allLocations
-
-
-middles : List Location
-middles =
-    List.filterMap
-        (\( x, y, z ) ->
-            if any (\h -> h == ( x, y )) [ ( X2, Y1 ), ( X1, Y2 ), ( X2, Y3 ), ( X3, Y2 ) ] then
-                Just ( x, y, z )
-
-            else
-                Nothing
-        )
-        allLocations
-
-
 allowedMove : Location -> Location -> Bool
 allowedMove ( x1, y1, z1 ) ( x2, y2, z2 ) =
     case member ( x1, y1, z1 ) middles of
@@ -415,7 +411,12 @@ allowedMove ( x1, y1, z1 ) ( x2, y2, z2 ) =
                     ( x1, z1 ) == ( x2, z2 ) || ( y1, z1 ) == ( y2, z2 )
 
         False ->
-            member ( x2, y2, z2 ) middles && ( x1, z1 ) == ( x2, z2 ) || ( y1, z1 ) == ( y2, z2 )
+            case member ( x2, y2, z2 ) middles of
+                True ->
+                    ( x1, z1 ) == ( x2, z2 ) || ( y1, z1 ) == ( y2, z2 )
+
+                False ->
+                    False
 
 
 playerToString : Player -> String
@@ -518,159 +519,6 @@ whoseTurn x =
         B
 
 
-view : Model -> Html Msg
-view model =
-    div [ style [ ( "font-family", "monospace" ), ( "font-size", "42px" ) ] ]
-        [ --viewModel model.board
-          div [ style [ ( "transform", "scaleX(2)" ), ( "transform-origin", "0 0" ) ] ] [ viewBoard model.board ]
-
-        --, div [] [ text (toString model.moveinprogress) ]
-        --, viewAlls
-        --, div [] [ text <| playerToString <| winnerPlayer model ]
-        --, button [ onClick Reset ] [ text "New Game" ]
-        , viewTests
-        ]
-
-
-viewModel : Board -> Html Msg
-viewModel board =
-    div [] (List.indexedMap (\i p -> viewPlayer p (getLocation i)) board)
-
-
-viewBoard : Board -> Html Msg
-viewBoard board =
-    let
-        get n =
-            board |> List.Extra.getAt n |> Maybe.withDefault Empty
-
-        loc n =
-            viewPlayer (get n) (getLocation n)
-    in
-    div []
-        [ div
-            []
-            [ loc 0
-            , text "—"
-            , text "—"
-            , loc 1
-            , text "—"
-            , text "—"
-            , loc 2
-            ]
-        , div []
-            [ text "│"
-            , loc 3
-            , text "—"
-            , loc 4
-            , text "—"
-            , loc 5
-            , text "│"
-            ]
-        , div []
-            [ text "│"
-            , text "│"
-            , loc 6
-            , loc 7
-            , loc 8
-            , text "│"
-            , text "│"
-            ]
-        , div []
-            [ loc 9
-            , loc 10
-            , loc 11
-            , text " "
-            , loc 12
-            , loc 13
-            , loc 14
-            ]
-        , div []
-            [ text "│"
-            , text "│"
-            , loc 15
-            , loc 16
-            , loc 17
-            , text "│"
-            , text "│"
-            ]
-        , div []
-            [ text "│"
-            , loc 18
-            , text "—"
-            , loc 19
-            , text "—"
-            , loc 20
-            , text "│"
-            ]
-        , div []
-            [ loc 21
-            , text "—"
-            , text "—"
-            , loc 22
-            , text "—"
-            , text "—"
-            , loc 23
-            ]
-        ]
-
-
-playerToPiece : Player -> Location -> Html Msg
-playerToPiece player loc =
-    case player of
-        Empty ->
-            text "·"
-
-        W ->
-            img [ src "2.jpg", width 23, height 30 ] []
-
-        B ->
-            img [ src "1.jpg", width 23, height 30 ] []
-
-
-viewPlayer : Player -> Location -> Html Msg
-viewPlayer player loc =
-    span
-        [ onClick (Click loc)
-        , style
-            [ ( "color", "black" )
-            ]
-        ]
-        [ --text (playerToString player)
-          playerToPiece player loc
-
-        --, span [ style [ ( "font-size", "0.3em" ) ] ] [ text (loc |> (\( y, x, z ) -> toString y ++ toString x ++ toString z)) ]
-        ]
-
-
-viewTests : Html Msg
-viewTests =
-    let
-        pass =
-            List.all identity tests
-    in
-    div []
-        [ h3
-            [ style
-                [ ( "color"
-                  , if pass then
-                        "darkgreen"
-
-                    else
-                        "darkred"
-                  )
-                ]
-            ]
-            [ text ("Tests: " ++ toCheck pass)
-            ]
-        , div [] [ text <| String.join "" (List.map toCheck tests) ]
-        ]
-
-
-viewAlls : Html Msg
-viewAlls =
-    div [] (List.map (\x -> text <| toString x) allLocations)
-
-
 getLocation : Int -> Location
 getLocation i =
     case List.head (List.drop i allLocations) of
@@ -679,90 +527,3 @@ getLocation i =
 
         Nothing ->
             ( X1, Y1, Z1 )
-
-
-toCheck : Bool -> String
-toCheck bool =
-    case bool of
-        True ->
-            "✔"
-
-        False ->
-            "✘"
-
-
-tests : List Bool
-tests =
-    let
-        m1 =
-            { board = mkBoard [ ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y1, Z3 ), ( X3, Y2, Z1 ) ]
-            , moveinprogress = NoClick
-            , counter = 4
-            }
-
-        m2 =
-            update (Click ( X1, Y1, Z1 )) m1
-
-        m3 =
-            update (Click ( X3, Y1, Z3 )) m2
-
-        m4 =
-            { board = mkBoard [ ( X3, Y1, Z1 ), ( X3, Y2, Z1 ), ( X3, Y3, Z1 ) ] [ ( X1, Y1, Z3 ), ( X2, Y1, Z3 ), ( X3, Y1, Z3 ) ]
-            , moveinprogress = SecondClick ( X2, Y1, Z2 ) ( X2, Y1, Z3 )
-            , counter = 53
-            }
-
-        m5 =
-            { board = mkBoard [ ( X3, Y1, Z1 ), ( X3, Y2, Z1 ), ( X3, Y3, Z1 ), ( X1, Y3, Z3 ), ( X2, Y3, Z3 ), ( X1, Y2, Z3 ) ] [ ( X3, Y1, Z2 ), ( X3, Y2, Z2 ), ( X3, Y3, Z2 ), ( X3, Y1, Z3 ), ( X3, Y2, Z3 ), ( X3, Y3, Z3 ) ]
-            , moveinprogress = FirstClick ( X3, Y1, Z3 )
-            , counter = 13
-            }
-
-        m6 =
-            update (Click ( X3, Y1, Z1 )) m4
-
-        m7 =
-            { board = mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ), ( X1, Y2, Z1 ) ] [ ( X3, Y2, Z1 ), ( X2, Y1, Z2 ), ( X1, Y3, Z1 ), ( X1, Y2, Z2 ) ]
-            , moveinprogress = NoClick
-            , counter = 40
-            }
-    in
-    [ m2
-        == { board = mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y1, Z3 ), ( X3, Y2, Z1 ) ]
-           , moveinprogress = FirstClick ( X1, Y1, Z1 )
-           , counter = 4
-           }
-    , m3
-        == { board = mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y2, Z1 ) ]
-           , moveinprogress = NoClick
-           , counter = 5
-           }
-    , actualMill ( X1, Y1, Z1 ) [ ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ]
-    , actualMill ( X2, Y3, Z2 ) [ ( X3, Y3, Z2 ), ( X2, Y3, Z1 ) ] == False
-    , allowedMove ( X1, Y2, Z2 ) ( X3, Y2, Z2 ) == False
-    , allowedMove ( X2, Y1, Z3 ) ( X2, Y3, Z3 ) == False
-    , allowedMove ( X2, Y1, Z3 ) ( X2, Y1, Z2 )
-    , allowedMove ( X1, Y1, Z1 ) ( X3, Y3, Z1 ) == False
-    , allowedMove ( X1, Y2, Z3 ) ( X1, Y1, Z3 )
-    , isRightElimination ( X3, Y1, Z1 ) m4
-    , isRightElimination ( X3, Y1, Z1 ) m5 == False
-    , isWin m4 == False
-    , isWin m6
-    , isWin m7
-    ]
-
-
-mkBoard : List Location -> List Location -> List Player
-mkBoard ws bs =
-    repeat 24 Empty
-        |> indexedMap
-            (\i l ->
-                if member (getLocation i) ws then
-                    W
-
-                else if member (getLocation i) bs then
-                    B
-
-                else
-                    Empty
-            )

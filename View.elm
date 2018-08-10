@@ -5,6 +5,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import List.Extra
 import Morris exposing (..)
+import Tests exposing (..)
 
 
 view : Model -> Html Msg
