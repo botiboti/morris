@@ -24,42 +24,6 @@ view model =
         ]
 
 
-svgBoard : List (Svg msg)
-svgBoard =
-    [ Svg.circle [ cx "20", cy "20", r "12" ] []
-    , Svg.circle [ cx "200", cy "20", r "12" ] []
-    , Svg.circle [ cx "380", cy "20", r "12" ] []
-    , Svg.circle [ cx "380", cy "190", r "12" ] []
-    , Svg.circle [ cx "380", cy "360", r "12" ] []
-    , Svg.circle [ cx "200", cy "360", r "12" ] []
-    , Svg.circle [ cx "20", cy "360", r "12" ] []
-    , Svg.circle [ cx "20", cy "190", r "12" ] []
-    , rect [ x "20", y "20", Svg.Attributes.width "360", Svg.Attributes.height "340", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
-    , Svg.circle [ cx "75", cy "70", r "12" ] []
-    , Svg.circle [ cx "200", cy "70", r "12" ] []
-    , Svg.circle [ cx "325", cy "70", r "12" ] []
-    , Svg.circle [ cx "325", cy "190", r "12" ] []
-    , Svg.circle [ cx "325", cy "310", r "12" ] []
-    , Svg.circle [ cx "200", cy "310", r "12" ] []
-    , Svg.circle [ cx "75", cy "310", r "12" ] []
-    , Svg.circle [ cx "75", cy "190", r "12" ] []
-    , rect [ x "75", y "70", Svg.Attributes.width "250", Svg.Attributes.height "240", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
-    , Svg.circle [ cx "130", cy "120", r "12" ] []
-    , Svg.circle [ cx "200", cy "120", r "12" ] []
-    , Svg.circle [ cx "270", cy "120", r "12" ] []
-    , Svg.circle [ cx "270", cy "190", r "12" ] []
-    , Svg.circle [ cx "270", cy "260", r "12" ] []
-    , Svg.circle [ cx "200", cy "260", r "12" ] []
-    , Svg.circle [ cx "130", cy "260", r "12" ] []
-    , Svg.circle [ cx "130", cy "190", r "12" ] []
-    , rect [ x "130", y "120", Svg.Attributes.width "140", Svg.Attributes.height "140", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
-    , line [ x1 "200", y1 "20", x2 "200", y2 "120", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
-    , line [ x1 "20", y1 "190", x2 "130", y2 "190", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
-    , line [ x1 "200", y1 "360", x2 "200", y2 "260", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
-    , line [ x1 "270", y1 "190", x2 "380", y2 "190", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
-    ]
-
-
 viewB : Board -> Html Msg
 viewB board =
     let

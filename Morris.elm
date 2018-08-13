@@ -1,6 +1,7 @@
 module Morris exposing (..)
 
 import List exposing (..)
+import List.Extra exposing (..)
 
 
 type alias Model =
@@ -368,16 +369,11 @@ actualMillModed location playerlocations =
 
 isRightElimination : Location -> Model -> Bool
 isRightElimination loc model =
-    if
-        all
-            (\playerloc -> any (\mill -> member playerloc mill && all (\loc -> member loc (playerLocations (whoseTurn <| model.counter + 1) model.board)) mill) allMills)
-            (playerLocations (whoseTurn <| model.counter + 1) model.board)
-    then
-        True
-
-    else
-        (playerOnLocation loc model.board == (whoseTurn <| model.counter + 1))
-            && not (actualMillModed loc <| playerLocations (whoseTurn <| model.counter + 1) model.board)
+    all
+        (\playerloc -> any (\mill -> member playerloc mill && all (\loc -> member loc (playerLocations (whoseTurn <| model.counter + 1) model.board)) mill) allMills)
+        (playerLocations (whoseTurn <| model.counter + 1) model.board)
+        || (playerOnLocation loc model.board == (whoseTurn <| model.counter + 1))
+        && not (actualMillModed loc <| playerLocations (whoseTurn <| model.counter + 1) model.board)
 
 
 deleteLocation : Location -> Board -> Board
@@ -392,7 +388,7 @@ moveInProgressToLocation mip =
             loc
 
         _ ->
-            Debug.crash "HAHA"
+            ( X1, Y1, Z1 )
 
 
 allowedMove : Location -> Location -> Bool
@@ -434,31 +430,23 @@ playerToString player =
 
 locationIndex : Location -> Int
 locationIndex loc =
-    allLocations
-        |> List.indexedMap (,)
-        |> List.filterMap
-            (\( i, l ) ->
-                if l == loc then
-                    Just i
+    case
+        elemIndex loc allLocations
+    of
+        Just a ->
+            a
 
-                else
-                    Nothing
-            )
-        |> List.head
-        |> unwrap
+        _ ->
+            0
 
 
 isMill : List Location -> Bool
 isMill playerlocations =
     any
-        (\aa -> aa == True)
+        identity
         (List.map
             (\mm ->
-                if List.length mm == 3 then
-                    True
-
-                else
-                    False
+                List.length mm == 3
             )
             (List.map
                 (\x ->
@@ -492,22 +480,17 @@ playerLocations player board =
 
 playerOnLocation : Location -> Board -> Player
 playerOnLocation loc board =
-    unwrap (List.head (List.drop (locationIndex loc) board))
+    case getAt (locationIndex loc) board of
+        Just a ->
+            a
+
+        _ ->
+            Empty
 
 
 occupyLocation : Player -> Location -> Board -> Board
 occupyLocation player loc board =
     List.take (locationIndex loc) board ++ [ player ] ++ List.drop (locationIndex loc + 1) board
-
-
-unwrap : Maybe a -> a
-unwrap a =
-    case a of
-        Just a ->
-            a
-
-        Nothing ->
-            Debug.crash "HAHA"
 
 
 whoseTurn : Int -> Player
@@ -521,7 +504,7 @@ whoseTurn x =
 
 getLocation : Int -> Location
 getLocation i =
-    case List.head (List.drop i allLocations) of
+    case getAt i allLocations of
         Just a ->
             a
 
