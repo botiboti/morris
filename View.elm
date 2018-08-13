@@ -1,30 +1,109 @@
 module View exposing (..)
 
+import Css exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import List.Extra
 import Morris exposing (..)
+import Svg exposing (..)
+import Svg.Attributes exposing (..)
 import Tests exposing (..)
 
 
 view : Model -> Html Msg
 view model =
-    div [ style [ ( "font-family", "monospace" ), ( "font-size", "42px" ) ] ]
-        [ --viewModel model.board
-          div [ style [ ( "transform", "scaleX(2)" ), ( "transform-origin", "0 0" ) ] ]
+    div [ Html.Attributes.style [ ( "font-family", "monospace" ), ( "font-size", "42px" ) ] ]
+        [ viewB model.board
+        , div [ Html.Attributes.style [ ( "transform", "scaleX(2)" ), ( "transform-origin", "0 0" ) ] ]
             [ viewBoard model.board ]
 
-        --, viewAlls
-        --, div [] [ text <| playerToString <| winnerPlayer model ]
-        --, button [ onClick Reset ] [ text "New Game" ]
+        --, div [] [ Html.text <| playerToString <| winnerPlayer model ]
+        --, button [ onClick Reset ] [ Html.text "New Game" ]
         , viewTests
         ]
 
 
-viewModel : Board -> Html Msg
-viewModel board =
-    div [] (List.indexedMap (\i p -> viewPlayer p (getLocation i)) board)
+svgBoard : List (Svg msg)
+svgBoard =
+    [ Svg.circle [ cx "20", cy "20", r "12" ] []
+    , Svg.circle [ cx "200", cy "20", r "12" ] []
+    , Svg.circle [ cx "380", cy "20", r "12" ] []
+    , Svg.circle [ cx "380", cy "190", r "12" ] []
+    , Svg.circle [ cx "380", cy "360", r "12" ] []
+    , Svg.circle [ cx "200", cy "360", r "12" ] []
+    , Svg.circle [ cx "20", cy "360", r "12" ] []
+    , Svg.circle [ cx "20", cy "190", r "12" ] []
+    , rect [ x "20", y "20", Svg.Attributes.width "360", Svg.Attributes.height "340", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
+    , Svg.circle [ cx "75", cy "70", r "12" ] []
+    , Svg.circle [ cx "200", cy "70", r "12" ] []
+    , Svg.circle [ cx "325", cy "70", r "12" ] []
+    , Svg.circle [ cx "325", cy "190", r "12" ] []
+    , Svg.circle [ cx "325", cy "310", r "12" ] []
+    , Svg.circle [ cx "200", cy "310", r "12" ] []
+    , Svg.circle [ cx "75", cy "310", r "12" ] []
+    , Svg.circle [ cx "75", cy "190", r "12" ] []
+    , rect [ x "75", y "70", Svg.Attributes.width "250", Svg.Attributes.height "240", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
+    , Svg.circle [ cx "130", cy "120", r "12" ] []
+    , Svg.circle [ cx "200", cy "120", r "12" ] []
+    , Svg.circle [ cx "270", cy "120", r "12" ] []
+    , Svg.circle [ cx "270", cy "190", r "12" ] []
+    , Svg.circle [ cx "270", cy "260", r "12" ] []
+    , Svg.circle [ cx "200", cy "260", r "12" ] []
+    , Svg.circle [ cx "130", cy "260", r "12" ] []
+    , Svg.circle [ cx "130", cy "190", r "12" ] []
+    , rect [ x "130", y "120", Svg.Attributes.width "140", Svg.Attributes.height "140", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
+    , line [ x1 "200", y1 "20", x2 "200", y2 "120", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
+    , line [ x1 "20", y1 "190", x2 "130", y2 "190", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
+    , line [ x1 "200", y1 "360", x2 "200", y2 "260", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
+    , line [ x1 "270", y1 "190", x2 "380", y2 "190", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
+    ]
+
+
+viewB : Board -> Html Msg
+viewB board =
+    let
+        get n =
+            board |> List.Extra.getAt n |> Maybe.withDefault Empty
+
+        loc n =
+            viewPlayer (get n) (getLocation n)
+    in
+    div []
+        [ svg [ Svg.Attributes.height "380", Svg.Attributes.width "400" ]
+            [ Svg.circle [ cx "20", cy "20", r "12" ] []
+            , Svg.circle [ cx "200", cy "20", r "12" ] []
+            , Svg.circle [ cx "380", cy "20", r "12" ] []
+            , Svg.circle [ cx "380", cy "190", r "12" ] []
+            , Svg.circle [ cx "380", cy "360", r "12" ] []
+            , Svg.circle [ cx "200", cy "360", r "12" ] []
+            , Svg.circle [ cx "20", cy "360", r "12" ] []
+            , Svg.circle [ cx "20", cy "190", r "12" ] []
+            , rect [ x "20", y "20", Svg.Attributes.width "360", Svg.Attributes.height "340", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
+            , Svg.circle [ cx "75", cy "70", r "12" ] []
+            , Svg.circle [ cx "200", cy "70", r "12" ] []
+            , Svg.circle [ cx "325", cy "70", r "12" ] []
+            , Svg.circle [ cx "325", cy "190", r "12" ] []
+            , Svg.circle [ cx "325", cy "310", r "12" ] []
+            , Svg.circle [ cx "200", cy "310", r "12" ] []
+            , Svg.circle [ cx "75", cy "310", r "12" ] []
+            , Svg.circle [ cx "75", cy "190", r "12" ] []
+            , rect [ x "75", y "70", Svg.Attributes.width "250", Svg.Attributes.height "240", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
+            , Svg.circle [ cx "130", cy "120", r "12" ] []
+            , Svg.circle [ cx "200", cy "120", r "12" ] []
+            , Svg.circle [ cx "270", cy "120", r "12" ] []
+            , Svg.circle [ cx "270", cy "190", r "12" ] []
+            , Svg.circle [ cx "270", cy "260", r "12" ] []
+            , Svg.circle [ cx "200", cy "260", r "12" ] []
+            , Svg.circle [ cx "130", cy "260", r "12" ] []
+            , Svg.circle [ cx "130", cy "190", r "12" ] []
+            , rect [ x "130", y "120", Svg.Attributes.width "140", Svg.Attributes.height "140", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
+            , line [ x1 "200", y1 "20", x2 "200", y2 "120", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
+            , line [ x1 "20", y1 "190", x2 "130", y2 "190", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
+            , line [ x1 "200", y1 "360", x2 "200", y2 "260", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
+            , line [ x1 "270", y1 "190", x2 "380", y2 "190", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
+            ]
+        ]
 
 
 viewBoard : Board -> Html Msg
@@ -40,65 +119,65 @@ viewBoard board =
         [ div
             []
             [ loc 0
-            , text "—"
-            , text "—"
+            , Html.text "—"
+            , Html.text "—"
             , loc 1
-            , text "—"
-            , text "—"
+            , Html.text "—"
+            , Html.text "—"
             , loc 2
             ]
         , div []
-            [ text "│"
+            [ Html.text "│"
             , loc 3
-            , text "—"
+            , Html.text "—"
             , loc 4
-            , text "—"
+            , Html.text "—"
             , loc 5
-            , text "│"
+            , Html.text "│"
             ]
         , div []
-            [ text "│"
-            , text "│"
+            [ Html.text "│"
+            , Html.text "│"
             , loc 6
             , loc 7
             , loc 8
-            , text "│"
-            , text "│"
+            , Html.text "│"
+            , Html.text "│"
             ]
         , div []
             [ loc 9
             , loc 10
             , loc 11
-            , text " "
+            , Html.text " "
             , loc 12
             , loc 13
             , loc 14
             ]
         , div []
-            [ text "│"
-            , text "│"
+            [ Html.text "│"
+            , Html.text "│"
             , loc 15
             , loc 16
             , loc 17
-            , text "│"
-            , text "│"
+            , Html.text "│"
+            , Html.text "│"
             ]
         , div []
-            [ text "│"
+            [ Html.text "│"
             , loc 18
-            , text "—"
+            , Html.text "—"
             , loc 19
-            , text "—"
+            , Html.text "—"
             , loc 20
-            , text "│"
+            , Html.text "│"
             ]
         , div []
             [ loc 21
-            , text "—"
-            , text "—"
+            , Html.text "—"
+            , Html.text "—"
             , loc 22
-            , text "—"
-            , text "—"
+            , Html.text "—"
+            , Html.text "—"
             , loc 23
             ]
         ]
@@ -108,27 +187,27 @@ playerToPiece : Player -> Location -> Html Msg
 playerToPiece player loc =
     case player of
         Empty ->
-            text "·"
+            Html.text "·"
 
         W ->
-            img [ src "2.jpg", width 23, height 30 ] []
+            img [ src "2.jpg", Html.Attributes.width 23, Html.Attributes.height 30 ] []
 
         B ->
-            img [ src "1.jpg", width 23, height 30 ] []
+            img [ src "1.jpg", Html.Attributes.width 23, Html.Attributes.height 30 ] []
 
 
 viewPlayer : Player -> Location -> Html Msg
 viewPlayer player loc =
     span
         [ onClick (Click loc)
-        , style
-            [ ( "color", "black" )
+        , Html.Attributes.style
+            [ ( "color", "red" )
             ]
         ]
-        [ --text (playerToString player)
+        [ --Html.text (playerToString player)
           playerToPiece player loc
 
-        --, span [ style [ ( "font-size", "0.3em" ) ] ] [ text (loc |> (\( y, x, z ) -> toString y ++ toString x ++ toString z)) ]
+        --, span [ style [ ( "font-size", "0.3em" ) ] ] [ Html.text (loc |> (\( y, x, z ) -> toString y ++ toString x ++ toString z)) ]
         ]
 
 
@@ -140,7 +219,7 @@ viewTests =
     in
     div []
         [ h3
-            [ style
+            [ Html.Attributes.style
                 [ ( "color"
                   , if pass then
                         "darkgreen"
@@ -150,15 +229,15 @@ viewTests =
                   )
                 ]
             ]
-            [ text ("Tests: " ++ toCheck pass)
+            [ Html.text ("Tests: " ++ toCheck pass)
             ]
-        , div [] [ text <| String.join "" (List.map toCheck tests) ]
+        , div [] [ Html.text <| String.join "" (List.map toCheck tests) ]
         ]
 
 
 viewAlls : Html Msg
 viewAlls =
-    div [] (List.map (\x -> text <| toString x) allLocations)
+    div [] (List.map (\x -> Html.text <| toString x) allLocations)
 
 
 toCheck : Bool -> String
