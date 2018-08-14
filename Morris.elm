@@ -53,6 +53,7 @@ type Player
 
 type Msg
     = Click Location
+    | Reset
 
 
 allColumns : List Column
@@ -294,6 +295,9 @@ update msg model =
 
                                 else
                                     model
+
+        Reset ->
+            Tuple.first init
 
 
 {-| Return True if a player has no legal moves or has < 2 players.

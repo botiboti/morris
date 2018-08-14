@@ -19,7 +19,9 @@ view model =
             [ viewBoard model.board ]
 
         --, div [] [ Html.text <| playerToString <| winnerPlayer model ]
-        --, button [ onClick Reset ] [ Html.text "New Game" ]
+        , button
+            [ onClick Reset ]
+            [ Html.text "New Game" ]
         , viewTests
         ]
 
