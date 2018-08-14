@@ -56,16 +56,14 @@ tests =
            , moveinprogress = NoClick
            , counter = 5
            }
-    , actualMill ( X1, Y1, Z1 ) [ ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ]
-    , actualMill ( X2, Y3, Z2 ) [ ( X3, Y3, Z2 ), ( X2, Y3, Z1 ) ] == False
     , allowedMove ( X1, Y2, Z2 ) ( X3, Y2, Z2 ) == False
     , allowedMove ( X2, Y1, Z3 ) ( X2, Y3, Z3 ) == False
     , allowedMove ( X2, Y1, Z3 ) ( X2, Y1, Z2 )
     , allowedMove ( X1, Y1, Z1 ) ( X3, Y3, Z1 ) == False
     , allowedMove ( X1, Y2, Z3 ) ( X1, Y1, Z3 )
     , allowedMove ( X3, Y1, Z3 ) ( X1, Y1, Z3 ) == False
-    , isRightElimination ( X3, Y1, Z1 ) m4
-    , isRightElimination ( X3, Y1, Z1 ) m5 == False
+    , validElimination ( X3, Y1, Z1 ) m4
+    , validElimination ( X3, Y1, Z1 ) m5 == False
     , isWin m4 == False
     , isWin m6
     , isWin m7
