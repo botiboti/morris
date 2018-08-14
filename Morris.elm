@@ -15,6 +15,8 @@ type alias Location =
     ( Column, Row, Ring )
 
 
+{-| It should always be 24 players long.
+-}
 type alias Board =
     List Player
 
@@ -68,6 +70,8 @@ allRings =
     [ Z1, Z2, Z3 ]
 
 
+{-| All mills possible.
+-}
 allMills : List (List Location)
 allMills =
     [ [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ]
@@ -89,6 +93,8 @@ allMills =
     ]
 
 
+{-| All the locations.
+-}
 allLocations : List Location
 allLocations =
     [ ( X1, Y1, Z1 )
@@ -118,6 +124,8 @@ allLocations =
     ]
 
 
+{-| All the locations located on the corners of the board.
+-}
 corners : List Location
 corners =
     allLocations
@@ -134,6 +142,8 @@ corners =
             )
 
 
+{-| All the locations located in the middle of the board.
+-}
 middles : List Location
 middles =
     allLocations
@@ -150,11 +160,15 @@ middles =
             )
 
 
+{-| The initial model.
+-}
 init : ( Model, Cmd Msg )
 init =
     ( { board = List.map (always Empty) allLocations, moveinprogress = NoClick, counter = 0 }, Cmd.none )
 
 
+{-| Based on the actions of the user updates the model.
+-}
 update : Msg -> Model -> Model
 update msg model =
     let
@@ -282,6 +296,8 @@ update msg model =
                                     model
 
 
+{-| Return True if a player has no legal moves or has < 2 players.
+-}
 isWin : Model -> Bool
 isWin model =
     any
@@ -319,6 +335,8 @@ isWin model =
             )
 
 
+{-| Defines if the location is in a mill, in the initial phases of the game.
+-}
 isNewMill : Location -> List Location -> Bool
 isNewMill location playerlocations =
     any
@@ -333,6 +351,8 @@ isNewMill location playerlocations =
         )
 
 
+{-| Defines if the location is in a mill, when all the pieces are on the board.
+-}
 isActiveMill : Location -> List Location -> Bool
 isActiveMill location playerlocations =
     any
@@ -343,6 +363,8 @@ isActiveMill location playerlocations =
         )
 
 
+{-| Defines if the desired elimination is valid.
+-}
 validElimination : Location -> Model -> Bool
 validElimination loc model =
     all
@@ -357,11 +379,15 @@ validElimination loc model =
             (isActiveMill loc <| playerLocations (whoseTurn <| model.counter + 1) model.board)
 
 
+{-| Deleting a location from the board. This function is useful when the player moves from one location to another.
+-}
 deleteLocation : Location -> Board -> Board
 deleteLocation loc board =
     updateAt (locationIndex loc) (\player -> Empty) board
 
 
+{-| Stored location to location.
+-}
 moveInProgressToLocation : MoveInProgress -> Location
 moveInProgressToLocation mip =
     case mip of
@@ -372,6 +398,8 @@ moveInProgressToLocation mip =
             ( X1, Y1, Z1 )
 
 
+{-| Returns True or False if it's possible to move a player from one location to another.
+-}
 allowedMove : Location -> Location -> Bool
 allowedMove ( x1, y1, z1 ) ( x2, y2, z2 ) =
     let
@@ -403,6 +431,8 @@ allowedMove ( x1, y1, z1 ) ( x2, y2, z2 ) =
                     False
 
 
+{-| Turns a player to a string.
+-}
 playerToString : Player -> String
 playerToString player =
     case player of
@@ -416,6 +446,8 @@ playerToString player =
             "B"
 
 
+{-| Returns the corresponding index for a location.
+-}
 locationIndex : Location -> Int
 locationIndex loc =
     case
@@ -428,6 +460,8 @@ locationIndex loc =
             0
 
 
+{-| Returns True if the player has a mill.
+-}
 isMill : List Location -> Bool
 isMill playerlocations =
     any
@@ -447,6 +481,8 @@ isMill playerlocations =
         )
 
 
+{-| Returns the list of locations where the given player has pieces on the board.
+-}
 playerLocations : Player -> Board -> List Location
 playerLocations player board =
     allLocations
@@ -456,6 +492,8 @@ playerLocations player board =
             )
 
 
+{-| Returns the player on the location.
+-}
 playerOnLocation : Location -> Board -> Player
 playerOnLocation loc board =
     case getAt (locationIndex loc) board of
@@ -466,11 +504,15 @@ playerOnLocation loc board =
             Empty
 
 
+{-| Updates the board with the current player on the desired position/location.
+-}
 updateBoard : Player -> Location -> Board -> Board
 updateBoard player loc board =
     List.take (locationIndex loc) board ++ [ player ] ++ List.drop (locationIndex loc + 1) board
 
 
+{-| Based on the game round returns a player.
+-}
 whoseTurn : Int -> Player
 whoseTurn x =
     if x % 2 == 0 then
@@ -480,6 +522,8 @@ whoseTurn x =
         B
 
 
+{-| Returns the corresponding location for an index.
+-}
 getLocation : Int -> Location
 getLocation i =
     case getAt i allLocations of
@@ -490,6 +534,8 @@ getLocation i =
             ( X1, Y1, Z1 )
 
 
+{-| Helper function.
+-}
 maybe : Bool -> a -> Maybe a
 maybe bool a =
     if bool then
