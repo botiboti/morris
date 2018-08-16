@@ -16,9 +16,9 @@ view : Model -> Html Msg
 view model =
     div [ Html.Attributes.style [ ( "font-family", "monospace" ), ( "font-size", "42px" ) ] ]
         [ viewBoardalpha model.board
-        , div [ Html.Attributes.style [ ( "transform", "scaleX(2)" ), ( "transform-origin", "0 0" ) ] ]
-            [ viewBoard model.board ]
 
+        --, div [ Html.Attributes.style [ ( "transform", "scaleX(2)" ), ( "transform-origin", "0 0" ) ] ]
+        --[ viewBoard model.board ]
         --, div [] [ Html.text <| playerToString <| winnerPlayer model ]
         , button [ onClick Reset ] [ Html.text "New Game" ]
         , viewTests
@@ -31,8 +31,8 @@ viewBoardalpha board =
         get n =
             board |> List.Extra.getAt n |> Maybe.withDefault Empty
 
-        loc n =
-            viewPlayer (get n) (getLocation n)
+        playercolor location =
+            playerColor (get (locationIndex location))
 
         ( c1, c2, c3, c4, c5, c6, c7 ) =
             ( 20, 80, 140, 200, 260, 320, 380 )
@@ -84,84 +84,97 @@ viewBoardalpha board =
                             [ cx (px x)
                             , cy (px y)
                             , r (px 12)
-                            , fill <| Fill Color.black
-                            , onClick Reset
+                            , fill <| playercolor xyz
+                            , onClick (Click xyz)
                             ]
                             []
                    )
     in
     svg
-        [ viewBox 0 0 1400 400
+        [ viewBox 0 0 1000 500
         ]
-        ((allLocations |> List.map circ)
-            ++ [ rect
-                    [ x (px c1)
-                    , y (px c1)
-                    , TypedSvg.Attributes.width (px 360)
-                    , TypedSvg.Attributes.height (px 360)
-                    , strokeWidth (px 5)
-                    , noFill
-                    , stroke black
-                    ]
-                    []
-               , rect
-                    [ x (px c2)
-                    , y (px c2)
-                    , TypedSvg.Attributes.width (px 240)
-                    , TypedSvg.Attributes.height (px 240)
-                    , strokeWidth (px 5)
-                    , noFill
-                    , stroke black
-                    ]
-                    []
-               , rect
-                    [ x (px c3)
-                    , y (px c3)
-                    , TypedSvg.Attributes.width (px 120)
-                    , TypedSvg.Attributes.height (px 120)
-                    , strokeWidth (px 5)
-                    , noFill
-                    , stroke black
-                    ]
-                    []
-               , line
-                    [ x1 (px c4)
-                    , y1 (px c1)
-                    , x2 (px c4)
-                    , y2 (px c3)
-                    , strokeWidth (px 5)
-                    , stroke black
-                    ]
-                    []
-               , line
-                    [ x1 (px c1)
-                    , y1 (px c4)
-                    , x2 (px c3)
-                    , y2 (px c4)
-                    , strokeWidth (px 5)
-                    , stroke black
-                    ]
-                    []
-               , line
-                    [ x1 (px c5)
-                    , y1 (px c4)
-                    , x2 (px c7)
-                    , y2 (px c4)
-                    , strokeWidth (px 5)
-                    , stroke black
-                    ]
-                    []
-               , line
-                    [ x1 (px c4)
-                    , y1 (px c5)
-                    , x2 (px c4)
-                    , y2 (px c7)
-                    , strokeWidth (px 5)
-                    , stroke black
-                    ]
-                    []
-               ]
+        ([ rect
+            [ x (px c1)
+            , y (px c1)
+            , TypedSvg.Attributes.width (px 360)
+            , TypedSvg.Attributes.height (px 360)
+            , strokeWidth (px 5)
+            , noFill
+            , stroke black
+            ]
+            []
+         , rect
+            [ x (px c2)
+            , y (px c2)
+            , TypedSvg.Attributes.width (px 240)
+            , TypedSvg.Attributes.height (px 240)
+            , strokeWidth (px 5)
+            , noFill
+            , stroke black
+            ]
+            []
+         , rect
+            [ x (px c3)
+            , y (px c3)
+            , TypedSvg.Attributes.width (px 120)
+            , TypedSvg.Attributes.height (px 120)
+            , strokeWidth (px 5)
+            , noFill
+            , stroke black
+            ]
+            []
+         , line
+            [ x1 (px c4)
+            , y1 (px c1)
+            , x2 (px c4)
+            , y2 (px c3)
+            , strokeWidth (px 5)
+            , stroke black
+            ]
+            []
+         , line
+            [ x1 (px c1)
+            , y1 (px c4)
+            , x2 (px c3)
+            , y2 (px c4)
+            , strokeWidth (px 5)
+            , stroke black
+            ]
+            []
+         , line
+            [ x1 (px c5)
+            , y1 (px c4)
+            , x2 (px c7)
+            , y2 (px c4)
+            , strokeWidth (px 5)
+            , stroke black
+            ]
+            []
+         , line
+            [ x1 (px c4)
+            , y1 (px c5)
+            , x2 (px c4)
+            , y2 (px c7)
+            , strokeWidth (px 5)
+            , stroke black
+            ]
+            []
+         ]
+            ++ (allLocations |> List.map circ)
         )
+
+
+playerColor : Player -> Fill
+playerColor player =
+    case player of
+        Empty ->
+            Fill black
+
+        W ->
+            Fill red
+
+        B ->
+            Fill green
 
 
 viewBoard : Board -> Html Msg
@@ -262,8 +275,7 @@ viewPlayer player loc =
             [ ( "color", "red" )
             ]
         ]
-        [ --Html.text (playerToString player)
-          playerToPiece player loc
+        [ playerToPiece player loc
 
         --, span [ Html.Attributes.style [ ( "font-size", "0.3em" ) ] ] [ Html.text (loc |> (\( y, x, z ) -> toString y ++ toString x ++ toString z)) ]
         ]
