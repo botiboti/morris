@@ -1,20 +1,21 @@
 module View exposing (..)
 
-import Css exposing (..)
+import Color exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import List.Extra
 import Morris exposing (..)
-import Svg exposing (..)
-import Svg.Attributes exposing (..)
 import Tests exposing (..)
+import TypedSvg exposing (..)
+import TypedSvg.Attributes exposing (..)
+import TypedSvg.Types exposing (..)
 
 
 view : Model -> Html Msg
 view model =
     div [ Html.Attributes.style [ ( "font-family", "monospace" ), ( "font-size", "42px" ) ] ]
-        [ viewB model.board
+        [ viewBoardalpha model.board
         , div [ Html.Attributes.style [ ( "transform", "scaleX(2)" ), ( "transform-origin", "0 0" ) ] ]
             [ viewBoard model.board ]
 
@@ -24,50 +25,143 @@ view model =
         ]
 
 
-viewB : Board -> Html Msg
-viewB board =
+viewBoardalpha : Board -> Html Msg
+viewBoardalpha board =
     let
         get n =
             board |> List.Extra.getAt n |> Maybe.withDefault Empty
 
         loc n =
             viewPlayer (get n) (getLocation n)
+
+        ( c1, c2, c3, c4, c5, c6, c7 ) =
+            ( 20, 80, 140, 200, 260, 320, 380 )
+
+        ring x y a b c =
+            case ( x, y ) of
+                ( X1, Y1 ) ->
+                    ( a, a )
+
+                ( X1, Y2 ) ->
+                    ( a, b )
+
+                ( X1, Y3 ) ->
+                    ( a, c )
+
+                ( X2, Y1 ) ->
+                    ( b, a )
+
+                ( X2, Y2 ) ->
+                    ( b, b )
+
+                ( X2, Y3 ) ->
+                    ( b, c )
+
+                ( X3, Y1 ) ->
+                    ( c, a )
+
+                ( X3, Y2 ) ->
+                    ( c, b )
+
+                ( X3, Y3 ) ->
+                    ( c, c )
+
+        coord ( x, y, z ) =
+            case z of
+                Z1 ->
+                    ring x y c1 c4 c7
+
+                Z2 ->
+                    ring x y c2 c4 c6
+
+                Z3 ->
+                    ring x y c3 c4 c5
+
+        circ xyz =
+            coord xyz
+                |> (\( x, y ) ->
+                        circle
+                            [ cx (px x)
+                            , cy (px y)
+                            , r (px 12)
+                            , fill <| Fill Color.black
+                            , onClick Reset
+                            ]
+                            []
+                   )
     in
-    div []
-        [ svg [ Svg.Attributes.height "380", Svg.Attributes.width "400" ]
-            [ Svg.circle [ cx "20", cy "20", r "12" ] []
-            , Svg.circle [ cx "200", cy "20", r "12" ] []
-            , Svg.circle [ cx "380", cy "20", r "12" ] []
-            , Svg.circle [ cx "380", cy "190", r "12" ] []
-            , Svg.circle [ cx "380", cy "360", r "12" ] []
-            , Svg.circle [ cx "200", cy "360", r "12" ] []
-            , Svg.circle [ cx "20", cy "360", r "12" ] []
-            , Svg.circle [ cx "20", cy "190", r "12" ] []
-            , rect [ x "20", y "20", Svg.Attributes.width "360", Svg.Attributes.height "340", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
-            , Svg.circle [ cx "75", cy "70", r "12" ] []
-            , Svg.circle [ cx "200", cy "70", r "12" ] []
-            , Svg.circle [ cx "325", cy "70", r "12" ] []
-            , Svg.circle [ cx "325", cy "190", r "12" ] []
-            , Svg.circle [ cx "325", cy "310", r "12" ] []
-            , Svg.circle [ cx "200", cy "310", r "12" ] []
-            , Svg.circle [ cx "75", cy "310", r "12" ] []
-            , Svg.circle [ cx "75", cy "190", r "12" ] []
-            , rect [ x "75", y "70", Svg.Attributes.width "250", Svg.Attributes.height "240", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
-            , Svg.circle [ cx "130", cy "120", r "12" ] []
-            , Svg.circle [ cx "200", cy "120", r "12" ] []
-            , Svg.circle [ cx "270", cy "120", r "12" ] []
-            , Svg.circle [ cx "270", cy "190", r "12" ] []
-            , Svg.circle [ cx "270", cy "260", r "12" ] []
-            , Svg.circle [ cx "200", cy "260", r "12" ] []
-            , Svg.circle [ cx "130", cy "260", r "12" ] []
-            , Svg.circle [ cx "130", cy "190", r "12" ] []
-            , rect [ x "130", y "120", Svg.Attributes.width "140", Svg.Attributes.height "140", Svg.Attributes.style "stroke: black; stroke-width: 3; fill: none" ] []
-            , line [ x1 "200", y1 "20", x2 "200", y2 "120", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
-            , line [ x1 "20", y1 "190", x2 "130", y2 "190", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
-            , line [ x1 "200", y1 "360", x2 "200", y2 "260", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
-            , line [ x1 "270", y1 "190", x2 "380", y2 "190", Svg.Attributes.style "stroke: black; stroke-width: 3" ] []
-            ]
+    svg
+        [ viewBox 0 0 1400 400
         ]
+        ((allLocations |> List.map circ)
+            ++ [ rect
+                    [ x (px c1)
+                    , y (px c1)
+                    , TypedSvg.Attributes.width (px 360)
+                    , TypedSvg.Attributes.height (px 360)
+                    , strokeWidth (px 5)
+                    , noFill
+                    , stroke black
+                    ]
+                    []
+               , rect
+                    [ x (px c2)
+                    , y (px c2)
+                    , TypedSvg.Attributes.width (px 240)
+                    , TypedSvg.Attributes.height (px 240)
+                    , strokeWidth (px 5)
+                    , noFill
+                    , stroke black
+                    ]
+                    []
+               , rect
+                    [ x (px c3)
+                    , y (px c3)
+                    , TypedSvg.Attributes.width (px 120)
+                    , TypedSvg.Attributes.height (px 120)
+                    , strokeWidth (px 5)
+                    , noFill
+                    , stroke black
+                    ]
+                    []
+               , line
+                    [ x1 (px c4)
+                    , y1 (px c1)
+                    , x2 (px c4)
+                    , y2 (px c3)
+                    , strokeWidth (px 5)
+                    , stroke black
+                    ]
+                    []
+               , line
+                    [ x1 (px c1)
+                    , y1 (px c4)
+                    , x2 (px c3)
+                    , y2 (px c4)
+                    , strokeWidth (px 5)
+                    , stroke black
+                    ]
+                    []
+               , line
+                    [ x1 (px c5)
+                    , y1 (px c4)
+                    , x2 (px c7)
+                    , y2 (px c4)
+                    , strokeWidth (px 5)
+                    , stroke black
+                    ]
+                    []
+               , line
+                    [ x1 (px c4)
+                    , y1 (px c5)
+                    , x2 (px c4)
+                    , y2 (px c7)
+                    , strokeWidth (px 5)
+                    , stroke black
+                    ]
+                    []
+               ]
+        )
 
 
 viewBoard : Board -> Html Msg
@@ -171,7 +265,7 @@ viewPlayer player loc =
         [ --Html.text (playerToString player)
           playerToPiece player loc
 
-        --, span [ style [ ( "font-size", "0.3em" ) ] ] [ Html.text (loc |> (\( y, x, z ) -> toString y ++ toString x ++ toString z)) ]
+        --, span [ Html.Attributes.style [ ( "font-size", "0.3em" ) ] ] [ Html.text (loc |> (\( y, x, z ) -> toString y ++ toString x ++ toString z)) ]
         ]
 
 
