@@ -15,23 +15,22 @@ import TypedSvg.Types exposing (..)
 view : Model -> Html Msg
 view model =
     div [ Html.Attributes.style [ ( "font-family", "monospace" ), ( "font-size", "42px" ) ] ]
-        [ viewBoardalpha model.board
+        [ viewBoard model
 
         --, div [ Html.Attributes.style [ ( "transform", "scaleX(2)" ), ( "transform-origin", "0 0" ) ] ]
-        --[ viewBoard model.board ]
         --, div [] [ Html.text <| playerToString <| winnerPlayer model ]
         , button [ onClick Reset ] [ Html.text "New Game" ]
         , viewTests
         ]
 
 
-viewBoardalpha : Board -> Html Msg
-viewBoardalpha board =
+viewBoard : Model -> Html Msg
+viewBoard model =
     let
         get n =
-            board |> List.Extra.getAt n |> Maybe.withDefault Empty
+            model.board |> List.Extra.getAt n |> Maybe.withDefault Empty
 
-        playercolor location =
+        locationcolor location =
             playerColor (get (locationIndex location))
 
         ( c1, c2, c3, c4, c5, c6, c7 ) =
@@ -84,14 +83,14 @@ viewBoardalpha board =
                             [ cx (px x)
                             , cy (px y)
                             , r (px 12)
-                            , fill <| playercolor xyz
+                            , fill <| locationcolor xyz
                             , onClick (Click xyz)
                             ]
                             []
                    )
     in
     svg
-        [ viewBox 0 0 1000 500
+        [ viewBox 0 0 1000 400
         ]
         ([ rect
             [ x (px c1)
@@ -175,110 +174,6 @@ playerColor player =
 
         B ->
             Fill green
-
-
-viewBoard : Board -> Html Msg
-viewBoard board =
-    let
-        get n =
-            board |> List.Extra.getAt n |> Maybe.withDefault Empty
-
-        loc n =
-            viewPlayer (get n) (getLocation n)
-    in
-    div []
-        [ div
-            []
-            [ loc 0
-            , Html.text "—"
-            , Html.text "—"
-            , loc 1
-            , Html.text "—"
-            , Html.text "—"
-            , loc 2
-            ]
-        , div []
-            [ Html.text "│"
-            , loc 3
-            , Html.text "—"
-            , loc 4
-            , Html.text "—"
-            , loc 5
-            , Html.text "│"
-            ]
-        , div []
-            [ Html.text "│"
-            , Html.text "│"
-            , loc 6
-            , loc 7
-            , loc 8
-            , Html.text "│"
-            , Html.text "│"
-            ]
-        , div []
-            [ loc 9
-            , loc 10
-            , loc 11
-            , Html.text " "
-            , loc 12
-            , loc 13
-            , loc 14
-            ]
-        , div []
-            [ Html.text "│"
-            , Html.text "│"
-            , loc 15
-            , loc 16
-            , loc 17
-            , Html.text "│"
-            , Html.text "│"
-            ]
-        , div []
-            [ Html.text "│"
-            , loc 18
-            , Html.text "—"
-            , loc 19
-            , Html.text "—"
-            , loc 20
-            , Html.text "│"
-            ]
-        , div []
-            [ loc 21
-            , Html.text "—"
-            , Html.text "—"
-            , loc 22
-            , Html.text "—"
-            , Html.text "—"
-            , loc 23
-            ]
-        ]
-
-
-playerToPiece : Player -> Location -> Html Msg
-playerToPiece player loc =
-    case player of
-        Empty ->
-            Html.text "·"
-
-        W ->
-            img [ src "2.jpg", Html.Attributes.width 23, Html.Attributes.height 30 ] []
-
-        B ->
-            img [ src "1.jpg", Html.Attributes.width 23, Html.Attributes.height 30 ] []
-
-
-viewPlayer : Player -> Location -> Html Msg
-viewPlayer player loc =
-    span
-        [ onClick (Click loc)
-        , Html.Attributes.style
-            [ ( "color", "red" )
-            ]
-        ]
-        [ playerToPiece player loc
-
-        --, span [ Html.Attributes.style [ ( "font-size", "0.3em" ) ] ] [ Html.text (loc |> (\( y, x, z ) -> toString y ++ toString x ++ toString z)) ]
-        ]
 
 
 viewTests : Html Msg

@@ -173,7 +173,7 @@ init =
 update : Msg -> Model -> Model
 update msg model =
     let
-        currentplayer =
+        whoseturn =
             model.counter |> whoseTurn
 
         isfirstclick =
@@ -199,15 +199,15 @@ update msg model =
                     Empty ->
                         case model.moveinprogress of
                             NoClick ->
-                                { board = updateBoard currentplayer location model.board
+                                { board = updateBoard whoseturn location model.board
                                 , moveinprogress =
-                                    if isNewMill location <| playerLocations currentplayer model.board then
+                                    if isNewMill location <| playerLocations whoseturn model.board then
                                         FirstClick location
 
                                     else
                                         NoClick
                                 , counter =
-                                    if isNewMill location <| playerLocations currentplayer model.board then
+                                    if isNewMill location <| playerLocations whoseturn model.board then
                                         model.counter
 
                                     else
@@ -235,25 +235,25 @@ update msg model =
                 model
 
             else
-                case playerOnLocation location model.board == currentplayer of
+                case playerOnLocation location model.board == whoseturn of
                     True ->
                         { model | moveinprogress = FirstClick location }
 
                     False ->
                         case playerOnLocation location model.board of
                             Empty ->
-                                if length (playerLocations currentplayer model.board) == 3 then
+                                if length (playerLocations whoseturn model.board) == 3 then
                                     if
                                         isfirstclick
-                                            && isNewMill location (playerLocations currentplayer (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board))
+                                            && isNewMill location (playerLocations whoseturn (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board))
                                     then
-                                        { board = updateBoard currentplayer location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
+                                        { board = updateBoard whoseturn location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
                                         , moveinprogress = SecondClick (moveInProgressToLocation model.moveinprogress) location
                                         , counter = model.counter
                                         }
 
                                     else if isfirstclick then
-                                        { board = updateBoard currentplayer location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
+                                        { board = updateBoard whoseturn location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
                                         , moveinprogress = NoClick
                                         , counter = model.counter + 1
                                         }
@@ -264,9 +264,9 @@ update msg model =
                                 else if
                                     isfirstclick
                                         && allowedMove location (moveInProgressToLocation model.moveinprogress)
-                                        && isNewMill location (playerLocations currentplayer (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board))
+                                        && isNewMill location (playerLocations whoseturn (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board))
                                 then
-                                    { board = updateBoard currentplayer location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
+                                    { board = updateBoard whoseturn location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
                                     , moveinprogress = SecondClick (moveInProgressToLocation model.moveinprogress) location
                                     , counter = model.counter
                                     }
@@ -275,7 +275,7 @@ update msg model =
                                     isfirstclick
                                         && allowedMove location (moveInProgressToLocation model.moveinprogress)
                                 then
-                                    { board = updateBoard currentplayer location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
+                                    { board = updateBoard whoseturn location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
                                     , moveinprogress = NoClick
                                     , counter = model.counter + 1
                                     }
@@ -355,7 +355,7 @@ isNewMill location playerlocations =
         )
 
 
-{-| Defines if the location is in a mill, when all the pieces are on the board.
+{-| Defines if the location is in a mill, when no more pieces are left to place.
 -}
 isActiveMill : Location -> List Location -> Bool
 isActiveMill location playerlocations =
