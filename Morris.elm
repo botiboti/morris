@@ -304,39 +304,42 @@ update msg model =
 -}
 isWin : Model -> Bool
 isWin model =
-    any
-        identity
-        (List.map
-            (\player -> length (playerLocations player model.board) < 3)
-            [ W, B ]
-        )
-        || not
-            (any
+    model.counter
+        > 18
+        && (any
                 identity
-                (concat <|
-                    List.map
-                        (\playerloc ->
+                (List.map
+                    (\player -> length (playerLocations player model.board) < 3)
+                    [ W, B ]
+                )
+                || not
+                    (any
+                        identity
+                        (concat <|
                             List.map
-                                (\emptyloc -> allowedMove playerloc emptyloc)
-                                (playerLocations Empty model.board)
+                                (\playerloc ->
+                                    List.map
+                                        (\emptyloc -> allowedMove playerloc emptyloc)
+                                        (playerLocations Empty model.board)
+                                )
+                                (playerLocations W model.board)
                         )
-                        (playerLocations W model.board)
-                )
-            )
-        || not
-            (any
-                identity
-                (concat <|
-                    (playerLocations B model.board
-                        |> List.map
-                            (\playerloc ->
-                                List.map
-                                    (\emptyloc -> allowedMove playerloc emptyloc)
-                                    (playerLocations Empty model.board)
-                            )
                     )
-                )
-            )
+                || not
+                    (any
+                        identity
+                        (concat <|
+                            (playerLocations B model.board
+                                |> List.map
+                                    (\playerloc ->
+                                        List.map
+                                            (\emptyloc -> allowedMove playerloc emptyloc)
+                                            (playerLocations Empty model.board)
+                                    )
+                            )
+                        )
+                    )
+           )
 
 
 {-| Defines if the location is in a mill, in the initial phases of the game.

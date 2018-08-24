@@ -9,6 +9,7 @@ import Morris exposing (..)
 import Tests exposing (..)
 import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
+import TypedSvg.Events exposing (..)
 import TypedSvg.Types exposing (..)
 
 
@@ -19,7 +20,16 @@ view model =
 
         --, div [ Html.Attributes.style [ ( "transform", "scaleX(2)" ), ( "transform-origin", "0 0" ) ] ]
         --, div [] [ Html.text <| playerToString <| winnerPlayer model ]
-        , button [ onClick Reset ] [ Html.text "New Game" ]
+        , button [ Html.Events.onClick Reset ] [ Html.text "New Game" ]
+        , div []
+            [ Html.text
+                (if isWin model then
+                    "WIN"
+
+                 else
+                    " "
+                )
+            ]
         , viewTests
         ]
 
@@ -30,8 +40,23 @@ viewBoard model =
         get n =
             model.board |> List.Extra.getAt n |> Maybe.withDefault Empty
 
-        locationcolor location =
-            playerColor (get (locationIndex location))
+        locationcolor location model =
+            if
+                (case model.moveinprogress of
+                    FirstClick loc ->
+                        loc
+
+                    _ ->
+                        ( X2, Y2, Z1 )
+                )
+                    == location
+                    && model.counter
+                    >= 18
+            then
+                Fill yellow
+
+            else
+                playerColor (get (locationIndex location))
 
         ( c1, c2, c3, c4, c5, c6, c7 ) =
             ( 20, 80, 140, 200, 260, 320, 380 )
@@ -83,8 +108,8 @@ viewBoard model =
                             [ cx (px x)
                             , cy (px y)
                             , r (px 12)
-                            , fill <| locationcolor xyz
-                            , onClick (Click xyz)
+                            , fill <| locationcolor xyz model
+                            , TypedSvg.Events.onClick (Click xyz)
                             ]
                             []
                    )
