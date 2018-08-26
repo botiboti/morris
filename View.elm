@@ -16,10 +16,7 @@ import TypedSvg.Types exposing (..)
 view : Model -> Html Msg
 view model =
     div [ Html.Attributes.style [ ( "font-family", "monospace" ), ( "font-size", "42px" ) ] ]
-        [ viewBoard model
-
-        --, div [ Html.Attributes.style [ ( "transform", "scaleX(2)" ), ( "transform-origin", "0 0" ) ] ]
-        --, div [] [ Html.text <| playerToString <| winnerPlayer model ]
+        [ div [] [ viewBoard model ]
         , button [ Html.Events.onClick Reset ] [ Html.text "New Game" ]
         , div []
             [ Html.text
@@ -183,6 +180,11 @@ viewBoard model =
             , stroke black
             ]
             []
+         , TypedSvg.text_
+            [ cx (px 200)
+            , cy (px 200)
+            ]
+            [ text "HH" ]
          ]
             ++ (allLocations |> List.map circ)
         )
