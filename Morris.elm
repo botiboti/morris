@@ -6,7 +6,7 @@ import List.Extra exposing (..)
 
 type alias Model =
     { board : Board
-    , moveinprogress : MoveInProgress
+    , moveInProgress : MoveInProgress
     , counter : Int
     }
 
@@ -165,7 +165,7 @@ middles =
 -}
 init : ( Model, Cmd Msg )
 init =
-    ( { board = List.map (always Empty) allLocations, moveinprogress = NoClick, counter = 0 }, Cmd.none )
+    ( { board = List.map (always Empty) allLocations, moveInProgress = NoClick, counter = 0 }, Cmd.none )
 
 
 {-| Based on the actions of the user updates the model.
@@ -173,19 +173,19 @@ init =
 update : Msg -> Model -> Model
 update msg model =
     let
-        whoseturn =
+        currentPlayer =
             model.counter |> whoseTurn
 
-        isfirstclick =
-            case model.moveinprogress of
+        isFirstClick =
+            case model.moveInProgress of
                 FirstClick _ ->
                     True
 
                 _ ->
                     False
 
-        issecondclick =
-            case model.moveinprogress of
+        isSecondClick =
+            case model.moveInProgress of
                 SecondClick _ _ ->
                     True
 
@@ -197,17 +197,17 @@ update msg model =
             if model.counter < 18 then
                 case playerOnLocation location model.board of
                     Empty ->
-                        case model.moveinprogress of
+                        case model.moveInProgress of
                             NoClick ->
-                                { board = updateBoard whoseturn location model.board
-                                , moveinprogress =
-                                    if isNewMill location <| playerLocations whoseturn model.board then
+                                { board = updateBoard currentPlayer location model.board
+                                , moveInProgress =
+                                    if isNewMill location <| playerLocations currentPlayer model.board then
                                         FirstClick location
 
                                     else
                                         NoClick
                                 , counter =
-                                    if isNewMill location <| playerLocations whoseturn model.board then
+                                    if isNewMill location <| playerLocations currentPlayer model.board then
                                         model.counter
 
                                     else
@@ -218,10 +218,10 @@ update msg model =
                                 model
 
                     _ ->
-                        if isfirstclick then
-                            if validElimination location model then
+                        if isFirstClick then
+                            if validCapture location model then
                                 { board = deleteLocation location model.board
-                                , moveinprogress = NoClick
+                                , moveInProgress = NoClick
                                 , counter = model.counter + 1
                                 }
 
@@ -235,26 +235,26 @@ update msg model =
                 model
 
             else
-                case playerOnLocation location model.board == whoseturn of
+                case playerOnLocation location model.board == currentPlayer of
                     True ->
-                        { model | moveinprogress = FirstClick location }
+                        { model | moveInProgress = FirstClick location }
 
                     False ->
                         case playerOnLocation location model.board of
                             Empty ->
-                                if length (playerLocations whoseturn model.board) == 3 then
+                                if length (playerLocations currentPlayer model.board) == 3 then
                                     if
-                                        isfirstclick
-                                            && isNewMill location (playerLocations whoseturn (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board))
+                                        isFirstClick
+                                            && isNewMill location (playerLocations currentPlayer (deleteLocation (moveInProgressToLocation <| model.moveInProgress) model.board))
                                     then
-                                        { board = updateBoard whoseturn location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
-                                        , moveinprogress = SecondClick (moveInProgressToLocation model.moveinprogress) location
+                                        { board = updateBoard currentPlayer location (deleteLocation (moveInProgressToLocation <| model.moveInProgress) model.board)
+                                        , moveInProgress = SecondClick (moveInProgressToLocation model.moveInProgress) location
                                         , counter = model.counter
                                         }
 
-                                    else if isfirstclick then
-                                        { board = updateBoard whoseturn location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
-                                        , moveinprogress = NoClick
+                                    else if isFirstClick then
+                                        { board = updateBoard currentPlayer location (deleteLocation (moveInProgressToLocation <| model.moveInProgress) model.board)
+                                        , moveInProgress = NoClick
                                         , counter = model.counter + 1
                                         }
 
@@ -262,21 +262,25 @@ update msg model =
                                         model
 
                                 else if
-                                    isfirstclick
-                                        && allowedMove location (moveInProgressToLocation model.moveinprogress)
-                                        && isNewMill location (playerLocations whoseturn (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board))
+                                    isFirstClick
+                                        && allowedMove location (moveInProgressToLocation model.moveInProgress)
+                                        && isNewMill location
+                                            (playerLocations
+                                                currentPlayer
+                                                (deleteLocation (moveInProgressToLocation <| model.moveInProgress) model.board)
+                                            )
                                 then
-                                    { board = updateBoard whoseturn location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
-                                    , moveinprogress = SecondClick (moveInProgressToLocation model.moveinprogress) location
+                                    { board = updateBoard currentPlayer location (deleteLocation (moveInProgressToLocation <| model.moveInProgress) model.board)
+                                    , moveInProgress = SecondClick (moveInProgressToLocation model.moveInProgress) location
                                     , counter = model.counter
                                     }
 
                                 else if
-                                    isfirstclick
-                                        && allowedMove location (moveInProgressToLocation model.moveinprogress)
+                                    isFirstClick
+                                        && allowedMove location (moveInProgressToLocation model.moveInProgress)
                                 then
-                                    { board = updateBoard whoseturn location (deleteLocation (moveInProgressToLocation <| model.moveinprogress) model.board)
-                                    , moveinprogress = NoClick
+                                    { board = updateBoard currentPlayer location (deleteLocation (moveInProgressToLocation <| model.moveInProgress) model.board)
+                                    , moveInProgress = NoClick
                                     , counter = model.counter + 1
                                     }
 
@@ -285,11 +289,11 @@ update msg model =
 
                             _ ->
                                 if
-                                    issecondclick
-                                        && validElimination location model
+                                    isSecondClick
+                                        && validCapture location model
                                 then
                                     { board = deleteLocation location model.board
-                                    , moveinprogress = NoClick
+                                    , moveInProgress = NoClick
                                     , counter = model.counter + 1
                                     }
 
@@ -300,7 +304,7 @@ update msg model =
             Tuple.first init
 
 
-{-| Return True if a player has no legal moves or has < 2 players.
+{-| Determine if a player has no legal moves or has < 2 players.
 -}
 isWin : Model -> Bool
 isWin model =
@@ -346,44 +350,52 @@ isWin model =
 -}
 isNewMill : Location -> List Location -> Bool
 isNewMill location playerlocations =
-    any
-        (\mill -> member location mill)
-        (allMills
-            |> List.filterMap
-                (\mill ->
-                    maybe
-                        (all (\loc -> member loc ([ location ] ++ playerlocations)) mill)
-                        mill
-                )
-        )
+    (allMills
+        |> List.filterMap
+            (\mill ->
+                maybe
+                    (all (\loc -> member loc ([ location ] ++ playerlocations)) mill)
+                    mill
+            )
+    )
+        |> any
+            (member location)
 
 
 {-| Defines if the location is in a mill, when no more pieces are left to place.
 -}
 isActiveMill : Location -> List Location -> Bool
 isActiveMill location playerlocations =
-    any
-        (\mill -> all (\loc -> member loc playerlocations) mill)
-        (allMills
-            |> List.filterMap
-                (\mill -> maybe (member location mill) mill)
-        )
+    (allMills
+        |> List.filterMap
+            (\mill -> maybe (member location mill) mill)
+    )
+        |> any
+            (all (\loc -> member loc playerlocations))
 
 
 {-| Defines if the desired elimination is valid.
 -}
-validElimination : Location -> Model -> Bool
-validElimination loc model =
-    all
-        (\playerloc ->
-            any
-                (\mill -> member playerloc mill && all (\loc -> member loc (playerLocations (whoseTurn <| model.counter + 1) model.board)) mill)
-                allMills
-        )
-        (playerLocations (whoseTurn <| model.counter + 1) model.board)
-        || (playerOnLocation loc model.board == (whoseTurn <| model.counter + 1))
-        && not
-            (isActiveMill loc <| playerLocations (whoseTurn <| model.counter + 1) model.board)
+validCapture : Location -> Model -> Bool
+validCapture loc model =
+    let
+        otherPlayer =
+            whoseTurn <| model.counter + 1
+
+        otherPlayerLocs =
+            playerLocations otherPlayer model.board
+
+        isOtherPlayer =
+            playerOnLocation loc model.board == otherPlayer
+
+        notInOthersMill =
+            not (isActiveMill loc otherPlayerLocs)
+
+        otherPlayerAllMills =
+            otherPlayerLocs
+                |> all (\playerloc -> isActiveMill playerloc otherPlayerLocs)
+    in
+    isOtherPlayer && (notInOthersMill || otherPlayerAllMills)
 
 
 {-| Deleting a location from the board. This function is useful when the player moves from one location to another.
@@ -405,52 +417,31 @@ moveInProgressToLocation mip =
             ( X1, Y1, Z1 )
 
 
-{-| Returns True or False if it's possible to move a player from one location to another.
+{-| Determine if a move is legal, between two adjacent positions.
 -}
 allowedMove : Location -> Location -> Bool
-allowedMove ( x1, y1, z1 ) ( x2, y2, z2 ) =
+allowedMove from to =
     let
-        isfirstmiddle =
-            member ( x1, y1, z1 ) middles
+        ( ( x1, y1, z1 ), ( x2, y2, z2 ) ) =
+            ( from, to )
 
-        issecondmiddle =
-            member ( x2, y2, z2 ) middles
+        isMiddle x =
+            member x middles
+
+        onRings1and3 =
+            (z1 == Z1 && z2 == Z3) || (z1 == Z3 && z2 == Z1)
+
+        sameXY =
+            ( x1, y1 ) == ( x2, y2 )
+
+        sameXZorYZ =
+            ( x1, z1 ) == ( x2, z2 ) || ( y1, z1 ) == ( y2, z2 )
     in
-    case isfirstmiddle of
-        True ->
-            case issecondmiddle of
-                True ->
-                    if (z1 == Z1 && z2 == Z3) || (z1 == Z3 && z2 == Z1) then
-                        False
+    if xor (isMiddle from) (isMiddle to) then
+        sameXZorYZ
 
-                    else
-                        ( x1, y1 ) == ( x2, y2 )
-
-                False ->
-                    ( x1, z1 ) == ( x2, z2 ) || ( y1, z1 ) == ( y2, z2 )
-
-        False ->
-            case issecondmiddle of
-                True ->
-                    ( x1, z1 ) == ( x2, z2 ) || ( y1, z1 ) == ( y2, z2 )
-
-                False ->
-                    False
-
-
-{-| Turns a player to a string.
--}
-playerToString : Player -> String
-playerToString player =
-    case player of
-        Empty ->
-            "·"
-
-        W ->
-            "W"
-
-        B ->
-            "B"
+    else
+        (from /= to) && isMiddle from && isMiddle to && sameXY && not onRings1and3
 
 
 {-| Returns the corresponding index for a location.
@@ -465,27 +456,6 @@ locationIndex loc =
 
         _ ->
             0
-
-
-{-| Returns True if the player has a mill.
--}
-isMill : List Location -> Bool
-isMill playerlocations =
-    any
-        identity
-        (List.map
-            (\mm ->
-                List.length mm == 3
-            )
-            (allMills
-                |> List.map
-                    (\x ->
-                        List.filterMap
-                            (\loc -> maybe (member loc playerlocations) loc)
-                            x
-                    )
-            )
-        )
 
 
 {-| Returns the list of locations where the given player has pieces on the board.
@@ -541,7 +511,7 @@ getLocation i =
             ( X1, Y1, Z1 )
 
 
-{-| Helper function.
+{-| Returns Just a when the Bool is true.
 -}
 maybe : Bool -> a -> Maybe a
 maybe bool a =

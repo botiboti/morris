@@ -9,6 +9,7 @@ import Morris exposing (..)
 import Tests exposing (..)
 import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
+import TypedSvg.Core exposing (..)
 import TypedSvg.Events exposing (..)
 import TypedSvg.Types exposing (..)
 
@@ -35,25 +36,19 @@ viewBoard : Model -> Html Msg
 viewBoard model =
     let
         get n =
-            model.board |> List.Extra.getAt n |> Maybe.withDefault Empty
+            model.board |> List.Extra.getAt (locationIndex n) |> Maybe.withDefault Empty
 
-        locationcolor location model =
-            if
-                (case model.moveinprogress of
-                    FirstClick loc ->
-                        loc
+        locationColor location =
+            case model.moveInProgress of
+                FirstClick loc ->
+                    if (location == loc) && (model.counter >= 18) then
+                        Fill yellow
 
-                    _ ->
-                        ( X2, Y2, Z1 )
-                )
-                    == location
-                    && model.counter
-                    >= 18
-            then
-                Fill yellow
+                    else
+                        playerColor (get location)
 
-            else
-                playerColor (get (locationIndex location))
+                _ ->
+                    playerColor (get location)
 
         ( c1, c2, c3, c4, c5, c6, c7 ) =
             ( 20, 80, 140, 200, 260, 320, 380 )
@@ -105,7 +100,7 @@ viewBoard model =
                             [ cx (px x)
                             , cy (px y)
                             , r (px 12)
-                            , fill <| locationcolor xyz model
+                            , fill <| locationColor xyz
                             , TypedSvg.Events.onClick (Click xyz)
                             ]
                             []
@@ -184,7 +179,7 @@ viewBoard model =
             [ cx (px 200)
             , cy (px 200)
             ]
-            [ text "HH" ]
+            [ TypedSvg.Core.text "HH" ]
          ]
             ++ (allLocations |> List.map circ)
         )
