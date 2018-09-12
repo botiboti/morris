@@ -1,6 +1,7 @@
 module Tests exposing (..)
 
 import List exposing (..)
+import List.Extra exposing (getAt)
 import Morris exposing (..)
 
 
@@ -122,3 +123,15 @@ mkBoard ws bs =
                 else
                     Empty
             )
+
+
+{-| Returns the corresponding location for an index.
+-}
+getLocation : Int -> Location
+getLocation i =
+    case getAt i allLocations of
+        Just a ->
+            a
+
+        Nothing ->
+            ( X1, Y1, Z1 )
