@@ -153,8 +153,8 @@ middles =
 
 {-| The initial model.
 -}
-init : ( Model, Cmd Msg )
-init =
+init : () -> ( Model, Cmd Msg )
+init _ =
     ( { board = List.map (always Empty) allLocations, moveInProgress = NoClick, counter = 0 }, Cmd.none )
 
 
@@ -183,6 +183,9 @@ update msg model =
             , moveInProgress = NoClick
             , counter = model.counter + 1
             }
+
+        selectPiece target =
+            { model | moveInProgress = FirstClick target }
 
         movePiece loc target =
             if
@@ -237,14 +240,14 @@ update msg model =
 
                     ( Move, NoClick ) ->
                         if isCurrentPlayer target then
-                            { model | moveInProgress = FirstClick target }
+                            selectPiece target
 
                         else
                             model
 
                     ( Move, FirstClick loc ) ->
                         if isCurrentPlayer target then
-                            { model | moveInProgress = FirstClick target }
+                            selectPiece target
 
                         else if allowedMove loc target && isEmptyLocation target then
                             movePiece loc target
@@ -257,14 +260,14 @@ update msg model =
 
                     ( Fly, NoClick ) ->
                         if isCurrentPlayer target then
-                            { model | moveInProgress = FirstClick target }
+                            selectPiece target
 
                         else
                             model
 
                     ( Fly, FirstClick loc ) ->
                         if isCurrentPlayer target then
-                            { model | moveInProgress = FirstClick target }
+                            selectPiece target
 
                         else if isEmptyLocation target then
                             movePiece loc target
@@ -279,7 +282,7 @@ update msg model =
                         model
 
         Reset ->
-            Tuple.first init
+            Tuple.first (init ())
 
 
 phase : Model -> Phase
@@ -322,9 +325,9 @@ isWin model =
 {-| Determine if the location is in a mill
 -}
 isMill : Location -> List Location -> Bool
-isMill location playerLocations =
+isMill location playerLocs =
     allMills
-        |> filter (all (\loc -> member loc playerLocations))
+        |> filter (all (\loc -> member loc playerLocs))
         |> any (member location)
 
 
@@ -424,7 +427,7 @@ locationIndex loc =
 -}
 whoseTurn : Int -> Player
 whoseTurn x =
-    if x % 2 == 0 then
+    if modBy 2 x == 0 then
         W
 
     else

@@ -59,7 +59,7 @@ tests =
             , counter = 6
             }
     in
-    [ -- Completing a mill
+    [ -- **Completing a mill
       update (Click ( X1, Y1, Z1 )) mFourPieces == mFirstMill
 
     -- Capturing a piece
@@ -86,7 +86,7 @@ tests =
     -- Moving a piece on the same location is not allowed
     , allowedMove ( X2, Y1, Z1 ) ( X2, Y1, Z1 ) == False
 
-    -- Valid capture
+    -- **A valid capture
     , validCapture ( X3, Y1, Z1 ) m4
 
     -- Capturing a piece in a mill is not allowed, unless there is no other option
@@ -95,7 +95,7 @@ tests =
     -- No one has won yet.
     , isWin m4 == False
 
-    -- When a player has < 3 pieces is a win condition
+    -- **When a player has < 3 pieces is a win condition
     , isWin m6
 
     -- When a player has no allowed moves is a win condition
