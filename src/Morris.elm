@@ -193,18 +193,17 @@ update msg model =
                     |> updateBoard loc Empty
                     |> updateBoard target currentPlayer
                     |> playerLocations currentPlayer
-                    |> (++) [ target ]
                     |> isMill target
             then
                 { board = updateBoard target currentPlayer (updateBoard loc Empty model.board)
-                , moveInProgress = NoClick
-                , counter = model.counter + 1
+                , moveInProgress = SecondClick loc target
+                , counter = model.counter
                 }
 
             else
                 { board = updateBoard target currentPlayer (updateBoard loc Empty model.board)
-                , moveInProgress = SecondClick loc target
-                , counter = model.counter
+                , moveInProgress = NoClick
+                , counter = model.counter + 1
                 }
 
         capturePiece target =
