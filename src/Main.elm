@@ -1,15 +1,15 @@
 module Main exposing (..)
 
+import Browser exposing (element)
 import Html exposing (..)
 import Morris exposing (..)
 import View exposing (..)
 
 
-main : Program Never Model Msg
 main =
-    program
+    Browser.element
         { init = init
-        , view = View.view
         , update = \msg model -> ( update msg model, Cmd.none )
         , subscriptions = \model -> Sub.none
+        , view = View.view
         }
