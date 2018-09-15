@@ -1,0 +1,35 @@
+image: nixos/nix:2.0.4
+
+before_script:
+  - true "Setting up environment..."
+  - export PATH=$PATH:/run/current-system/sw/bin
+  - true && [[ -e /etc/ssl/certs/ca-bundle.crt ]] || ln -s /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-bundle.crt || true
+  - true && [[ -e $NIX_SSL_CERT_FILE ]]  && ln -s $NIX_SSL_CERT_FILE /etc/ssl/certs/ca-bundle.crt || true
+  - export CURL_CA_BUNDLE="/etc/ssl/certs/ca-bundle.crt"
+  - echo -e 'silent\nshow-error\nretry=2' | tee ~/.curlrc > /dev/null
+
+test:
+  script:
+    - nix-shell --run "notify-github pending gitlab-ci"
+    - nix-shell --run 'check && build' && RESULT=success || RESULT=failure
+    - nix-shell --run "notify-github $RESULT gitlab-ci"
+    - true && [[ "$RESULT" == success ]]
+  artifacts:
+    expire_in: 1 month
+    paths:
+    - public
+
+pages:
+  stage: deploy
+  only:
+  - master
+  script:
+  - echo 'Deploying...'
+  dependencies:
+    - test
+  artifacts:
+    paths:
+    - public
+  environment:
+    name: gitlab-pages
+    url : https://brainrape.gitlab.io/morris/
