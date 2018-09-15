@@ -1,1 +1,1 @@
-[traj](https://brainrape.gitlab.io/morris/)
+[try](https://brainrape.gitlab.io/morris/)
