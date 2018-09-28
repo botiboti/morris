@@ -7,8 +7,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import List.Extra
 import Morris exposing (..)
-import Svg exposing (text_)
-import Svg.Attributes exposing (fill, string)
+import Svg.Attributes exposing (fill)
 import Tests exposing (..)
 import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
@@ -27,17 +26,6 @@ view model =
         [ div [] [ viewBoard model ]
         , button [ Html.Events.onClick Reset ] [ Html.text "New Game" ]
         , viewTests
-        , svg
-            [ TypedSvg.Attributes.height (px 1000)
-            , TypedSvg.Attributes.width (px 1000)
-            ]
-            [ Svg.text_
-                [ x (px 0)
-                , y (px 0)
-                , Svg.Attributes.string "Hello"
-                ]
-                []
-            ]
         ]
 
 
@@ -64,27 +52,6 @@ viewBoard model =
 
                 _ ->
                     False
-
-        gT18Counter =
-            model.counter > 18
-
-        lT3PiecesFor player =
-            List.length (playerLocations player model.board) < 3
-
-        noValidMovesFor player =
-            not
-                (playerLocations player model.board
-                    |> List.any
-                        (\playerLoc ->
-                            playerLocations Empty model.board
-                                |> List.any
-                                    (\emptyLoc -> allowedMove playerLoc emptyLoc)
-                        )
-                )
-
-        isLoserPiece location =
-            gT18Counter
-                && (lT3PiecesFor (get location) || noValidMovesFor (get location))
 
         coordinates =
             { c1 = 20, c2 = 80, c3 = 140, c4 = 200, c5 = 260, c6 = 320, c7 = 380 }
@@ -133,23 +100,26 @@ viewBoard model =
             coord xyz
                 |> (\( x, y ) ->
                         circle
-                            [ cx (px x)
-                            , cy (px y)
-                            , if isOccupied xyz then
-                                r (px 10)
+                            ((++)
+                                (Animation.render model.style)
+                                [ cx (px x)
+                                , cy (px y)
+                                , if isOccupied xyz then
+                                    r (px 10)
 
-                              else
-                                r (px 17)
-                            , if isSelected xyz then
-                                TypedSvg.Attributes.strokeWidth (px 5)
+                                  else
+                                    r (px 17)
+                                , if isSelected xyz then
+                                    TypedSvg.Attributes.strokeWidth (px 5)
 
-                              else
-                                TypedSvg.Attributes.strokeWidth (px 0)
-                            , TypedSvg.Color.rgb 255 255 77
-                                |> TypedSvg.Attributes.stroke
-                            , TypedSvg.Attributes.fill <| playerColor (get xyz)
-                            , TypedSvg.Events.onClick (Click xyz)
-                            ]
+                                  else
+                                    TypedSvg.Attributes.strokeWidth (px 0)
+                                , TypedSvg.Color.rgb 255 255 77
+                                    |> TypedSvg.Attributes.stroke
+                                , TypedSvg.Attributes.fill <| playerColor (get xyz)
+                                , TypedSvg.Events.onClick (Click xyz)
+                                ]
+                            )
                             []
                    )
     in
@@ -223,43 +193,15 @@ viewBoard model =
             ]
             []
          , circle
-            (Animation.render model.style
-                ++ [ cx (px 510)
-                   , r (px 14)
-                   , TypedSvg.Attributes.fill <| Fill purple
-                   ]
+            ((++)
+                (Animation.render model.style)
+                [ cx (px 200)
+                , r (px 10)
+                ]
             )
             []
          ]
             ++ (allLocations |> List.map circ)
-            ++ [ rect
-                    [ x (px 480)
-                    , y (px 80)
-                    , rx (px 30)
-                    , ry (px 32)
-                    , TypedSvg.Attributes.width (px 60)
-                    , TypedSvg.Attributes.height (px 240)
-                    , Svg.Attributes.fill <| "none "
-                    , TypedSvg.Attributes.strokeWidth (px 3)
-                    , TypedSvg.Attributes.stroke <| black
-                    ]
-                    []
-               , circle
-                    [ cx (px 580)
-                    , cy (px 110)
-                    , r (px 17)
-                    , TypedSvg.Color.rgb 222 184 135
-                        |> Fill
-                        |> TypedSvg.Attributes.fill
-                    ]
-                    []
-               , circle
-                    [ cx (px 580)
-                    , cy (px 290)
-                    , r (px 17)
-                    ]
-                    []
-               ]
         )
 
 
