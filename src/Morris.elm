@@ -198,12 +198,15 @@ init _ =
       --List.map (always Empty) allLocations
       , moveInProgress = FirstClick ( X1, Y3, Z1 )
       , counter = 21
-      , style =
-            Animation.style
-                [ Animation.attr "cy" 200 "px" ]
+      , style = initStyle
       }
     , Cmd.none
     )
+
+
+initStyle =
+    Animation.style
+        [ Animation.attr "cy" 200 "px" ]
 
 
 {-| Based on the actions of the user updates the model.
@@ -344,14 +347,48 @@ update msg model =
 winnerAnimation : Model -> Model
 winnerAnimation model =
     let
-        newStyle =
-            Animation.interrupt
-                [ [ Animation.attr "cy" 380 "px" ]
-                    |> Animation.toWith
-                        ({ duration = 1500.0, ease = Ease.outBounce }
-                            |> Animation.easing
+        gT18Counter =
+            model.counter > 18
+
+        lT3PiecesFor player =
+            length (playerLocations player model.board) < 3
+
+        noValidMovesFor player =
+            not
+                (playerLocations player model.board
+                    |> any
+                        (\playerLoc ->
+                            playerLocations Empty model.board
+                                |> any
+                                    (\emptyLoc -> allowedMove playerLoc emptyLoc)
                         )
-                ]
+                )
+
+        loses player =
+            gT18Counter && (noValidMovesFor player || lT3PiecesFor player)
+
+        newStyle =
+            if loses W then
+                Animation.interrupt
+                    [ [ Animation.attr "cy" 290 "px" ]
+                        |> Animation.toWith
+                            ({ duration = 1000, ease = Ease.outElastic }
+                                |> Animation.easing
+                            )
+                    ]
+                    model.style
+
+            else if loses B then
+                Animation.interrupt
+                    [ [ Animation.attr "cy" 110 "px" ]
+                        |> Animation.toWith
+                            ({ duration = 1000, ease = Ease.outElastic }
+                                |> Animation.easing
+                            )
+                    ]
+                    model.style
+
+            else
                 model.style
     in
     { model | style = newStyle }
