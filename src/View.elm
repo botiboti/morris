@@ -22,7 +22,7 @@ view : Model -> Html Morris.Msg
 view model =
     div
         [ Html.Attributes.style "font-family" "monospace"
-        , Html.Attributes.style "font-size" "42px"
+        , Html.Attributes.style "font-size" "35px"
         ]
         [ div [] [ viewBoard model ]
         , button [ Html.Events.onClick Reset ] [ Html.text "New Game" ]

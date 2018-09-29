@@ -191,13 +191,9 @@ mkBoard ws bs =
 -}
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { board =
-            mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ]
-                [ ( X1, Y3, Z1 ), ( X2, Y1, Z2 ), ( X3, Y2, Z1 ) ]
-
-      --List.map (always Empty) allLocations
-      , moveInProgress = FirstClick ( X1, Y3, Z1 )
-      , counter = 21
+    ( { board = List.repeat 24 Empty
+      , moveInProgress = NoClick
+      , counter = 0
       , style = initStyle
       }
     , Cmd.none
