@@ -191,13 +191,9 @@ mkBoard ws bs =
 -}
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { board =
-            mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ]
-                [ ( X1, Y3, Z1 ), ( X2, Y1, Z2 ), ( X3, Y2, Z1 ) ]
-
-      --List.map (always Empty) allLocations
-      , moveInProgress = FirstClick ( X1, Y3, Z1 )
-      , counter = 21
+    ( { board = List.repeat 24 Empty
+      , moveInProgress = NoClick
+      , counter = 0
       , style = initStyle
       }
     , Cmd.none
@@ -236,41 +232,52 @@ update msg model =
             , style = model.style
             }
 
+        winnerMove move =
+            if isWin <| move then
+                winnerAnimation <| move
+
+            else
+                move
+
         selectPiece target =
             { model | moveInProgress = FirstClick target }
 
         movePiece loc target =
-            if
+            (if
                 model.board
                     |> updateBoard loc Empty
                     |> updateBoard target currentPlayer
                     |> playerLocations currentPlayer
                     |> isMill target
-            then
+             then
                 { board = updateBoard target currentPlayer (updateBoard loc Empty model.board)
                 , moveInProgress = SecondClick loc target
                 , counter = model.counter
                 , style = model.style
                 }
 
-            else
+             else
                 { board = updateBoard target currentPlayer (updateBoard loc Empty model.board)
                 , moveInProgress = NoClick
                 , counter = model.counter + 1
                 , style = model.style
                 }
+            )
+                |> winnerMove
 
         capturePiece target =
-            if validCapture target model then
+            (if validCapture target model then
                 updateWithPlayer target Empty
 
-            else
+             else
                 model
+            )
+                |> winnerMove
     in
     case msg of
         Click target ->
             if isWin model then
-                winnerAnimation model
+                model
 
             else
                 case ( phase model, model.moveInProgress ) of
