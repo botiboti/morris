@@ -239,9 +239,9 @@ viewBoard model =
                     , ry (px 32)
                     , TypedSvg.Attributes.width (px 60)
                     , TypedSvg.Attributes.height (px 240)
-                    , Svg.Attributes.fill <| "none "
+                    , Svg.Attributes.fill <| "none"
                     , TypedSvg.Attributes.strokeWidth (px 3)
-                    , TypedSvg.Attributes.stroke <| black
+                    , TypedSvg.Attributes.stroke <| green
                     ]
                     []
                , circle
