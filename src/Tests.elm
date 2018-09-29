@@ -12,51 +12,59 @@ tests =
             { board = mkBoard [ ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y1, Z3 ), ( X3, Y2, Z1 ) ]
             , moveInProgress = NoClick
             , counter = 4
+            , style = (Tuple.first (init ())).style
             }
 
         mFirstMill =
             { board = mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y1, Z3 ), ( X3, Y2, Z1 ) ]
             , moveInProgress = FirstClick ( X1, Y1, Z1 )
             , counter = 4
+            , style = (Tuple.first (init ())).style
             }
 
         mFirstCapture =
             { board = mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ] [ ( X3, Y2, Z1 ) ]
             , moveInProgress = NoClick
             , counter = 5
+            , style = (Tuple.first (init ())).style
             }
 
-        m4 =
+        mAnOrdinarySituation =
             { board = mkBoard [ ( X3, Y1, Z1 ), ( X3, Y2, Z1 ), ( X3, Y3, Z1 ) ] [ ( X1, Y1, Z3 ), ( X2, Y1, Z3 ), ( X3, Y1, Z3 ) ]
             , moveInProgress = SecondClick ( X2, Y1, Z2 ) ( X2, Y1, Z3 )
             , counter = 53
+            , style = (Tuple.first (init ())).style
             }
 
-        m5 =
+        mCapturePieceInMill =
             { board = mkBoard [ ( X3, Y1, Z1 ), ( X3, Y2, Z1 ), ( X3, Y3, Z1 ), ( X1, Y3, Z3 ), ( X2, Y3, Z3 ), ( X1, Y2, Z3 ) ] [ ( X3, Y1, Z2 ), ( X3, Y2, Z2 ), ( X3, Y3, Z2 ), ( X3, Y1, Z3 ), ( X3, Y2, Z3 ), ( X3, Y3, Z3 ) ]
             , moveInProgress = FirstClick ( X3, Y1, Z3 )
             , counter = 13
+            , style = (Tuple.first (init ())).style
             }
 
-        m6 =
-            update (Click ( X3, Y1, Z1 )) m4
+        mLessThan3Piece =
+            update (Click ( X3, Y1, Z1 )) mAnOrdinarySituation
 
-        m7 =
+        mBlockedPlayer =
             { board = mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ), ( X1, Y2, Z1 ) ] [ ( X3, Y2, Z1 ), ( X2, Y1, Z2 ), ( X1, Y3, Z1 ), ( X1, Y2, Z2 ) ]
             , moveInProgress = NoClick
             , counter = 40
+            , style = (Tuple.first (init ())).style
             }
 
-        m8 =
+        mJustCapture =
             { board = mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ), ( X1, Y1, Z3 ), ( X2, Y1, Z3 ), ( X3, Y1, Z3 ), ( X3, Y3, Z2 ) ] [ ( X1, Y1, Z2 ), ( X2, Y1, Z2 ), ( X3, Y1, Z2 ), ( X1, Y3, Z3 ), ( X2, Y3, Z3 ), ( X3, Y3, Z3 ), ( X3, Y2, Z2 ) ]
             , moveInProgress = FirstClick ( X3, Y3, Z2 )
             , counter = 18
+            , style = (Tuple.first (init ())).style
             }
 
         mTwoMills =
             { board = mkBoard [ ( X1, Y1, Z1 ), ( X1, Y2, Z1 ), ( X1, Y3, Z1 ) ] [ ( X3, Y1, Z1 ), ( X3, Y2, Z1 ), ( X3, Y3, Z1 ) ]
             , moveInProgress = FirstClick ( X1, Y1, Z1 )
             , counter = 6
+            , style = (Tuple.first (init ())).style
             }
     in
     [ -- **Completing a mill
@@ -87,22 +95,22 @@ tests =
     , allowedMove ( X2, Y1, Z1 ) ( X2, Y1, Z1 ) == False
 
     -- **A valid capture
-    , validCapture ( X3, Y1, Z1 ) m4
+    , validCapture ( X3, Y1, Z1 ) mAnOrdinarySituation
 
     -- Capturing a piece in a mill is not allowed, unless there is no other option
-    , validCapture ( X3, Y1, Z1 ) m5 == False
+    , validCapture ( X3, Y1, Z1 ) mCapturePieceInMill == False
 
     -- No one has won yet.
-    , isWin m4 == False
+    , isWin mAnOrdinarySituation == False
 
     -- **When a player has < 3 pieces is a win condition
-    , isWin m6
+    , isWin mLessThan3Piece
 
     -- When a player has no allowed moves is a win condition
-    , isWin m7
+    , isWin mBlockedPlayer
 
     -- When a mill is formed the only legal move is to capture a piece.
-    , update (Click ( X1, Y3, Z2 )) m8 == m8
+    , update (Click ( X1, Y3, Z2 )) mJustCapture == mJustCapture
 
     -- When there are two complete mills a player is not allowed to capture one of his own pieces
     , validCapture ( X1, Y1, Z1 ) mTwoMills == False

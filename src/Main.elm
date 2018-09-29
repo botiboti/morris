@@ -10,6 +10,6 @@ main =
     Browser.element
         { init = init
         , update = \msg model -> ( update msg model, Cmd.none )
-        , subscriptions = \model -> Sub.none
+        , subscriptions = subscriptions
         , view = View.view
         }

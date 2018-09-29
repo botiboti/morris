@@ -1,13 +1,17 @@
 module Morris exposing (..)
 
+import Animation exposing (..)
+import Ease exposing (..)
 import List exposing (..)
 import List.Extra exposing (..)
+import Time exposing (..)
 
 
 type alias Model =
     { board : Board
     , moveInProgress : MoveInProgress
     , counter : Int
+    , style : Animation.State
     }
 
 
@@ -53,6 +57,7 @@ type Player
 
 type Msg
     = Click Location
+    | Animate Animation.Msg
     | Reset
 
 
@@ -151,11 +156,57 @@ middles =
             )
 
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Animation.subscription Animate [ model.style ]
+
+
+getLocation : Int -> Location
+getLocation i =
+    case getAt i allLocations of
+        Just a ->
+            a
+
+        Nothing ->
+            ( X1, Y1, Z1 )
+
+
+mkBoard : List Location -> List Location -> List Player
+mkBoard ws bs =
+    List.repeat 24 Empty
+        |> indexedMap
+            (\i l ->
+                if member (getLocation i) ws then
+                    W
+
+                else if member (getLocation i) bs then
+                    B
+
+                else
+                    Empty
+            )
+
+
 {-| The initial model.
 -}
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { board = List.map (always Empty) allLocations, moveInProgress = NoClick, counter = 0 }, Cmd.none )
+    ( { board =
+            mkBoard [ ( X1, Y1, Z1 ), ( X2, Y1, Z1 ), ( X3, Y1, Z1 ) ]
+                [ ( X1, Y3, Z1 ), ( X2, Y1, Z2 ), ( X3, Y2, Z1 ) ]
+
+      --List.map (always Empty) allLocations
+      , moveInProgress = FirstClick ( X1, Y3, Z1 )
+      , counter = 21
+      , style = initStyle
+      }
+    , Cmd.none
+    )
+
+
+initStyle =
+    Animation.style
+        [ Animation.attr "cy" 200 "px" ]
 
 
 {-| Based on the actions of the user updates the model.
@@ -182,6 +233,7 @@ update msg model =
             { board = updateBoard target player model.board
             , moveInProgress = NoClick
             , counter = model.counter + 1
+            , style = model.style
             }
 
         selectPiece target =
@@ -198,12 +250,14 @@ update msg model =
                 { board = updateBoard target currentPlayer (updateBoard loc Empty model.board)
                 , moveInProgress = SecondClick loc target
                 , counter = model.counter
+                , style = model.style
                 }
 
             else
                 { board = updateBoard target currentPlayer (updateBoard loc Empty model.board)
                 , moveInProgress = NoClick
                 , counter = model.counter + 1
+                , style = model.style
                 }
 
         capturePiece target =
@@ -216,7 +270,7 @@ update msg model =
     case msg of
         Click target ->
             if isWin model then
-                model
+                winnerAnimation model
 
             else
                 case ( phase model, model.moveInProgress ) of
@@ -226,6 +280,7 @@ update msg model =
                                 { board = updateBoard target currentPlayer model.board
                                 , moveInProgress = FirstClick target
                                 , counter = model.counter
+                                , style = model.style
                                 }
 
                             else
@@ -280,8 +335,63 @@ update msg model =
                     _ ->
                         model
 
+        Animate animMsg ->
+            { model
+                | style = Animation.update animMsg model.style
+            }
+
         Reset ->
             Tuple.first (init ())
+
+
+winnerAnimation : Model -> Model
+winnerAnimation model =
+    let
+        gT18Counter =
+            model.counter > 18
+
+        lT3PiecesFor player =
+            length (playerLocations player model.board) < 3
+
+        noValidMovesFor player =
+            not
+                (playerLocations player model.board
+                    |> any
+                        (\playerLoc ->
+                            playerLocations Empty model.board
+                                |> any
+                                    (\emptyLoc -> allowedMove playerLoc emptyLoc)
+                        )
+                )
+
+        loses player =
+            gT18Counter && (noValidMovesFor player || lT3PiecesFor player)
+
+        newStyle =
+            if loses W then
+                Animation.interrupt
+                    [ [ Animation.attr "cy" 290 "px" ]
+                        |> Animation.toWith
+                            ({ duration = 1000, ease = Ease.outElastic }
+                                |> Animation.easing
+                            )
+                    ]
+                    model.style
+
+            else if loses B then
+                Animation.interrupt
+                    [ [ Animation.attr "cy" 110 "px" ]
+                        |> Animation.toWith
+                            ({ duration = 1000, ease = Ease.outElastic }
+                                |> Animation.easing
+                            )
+                    ]
+                    model.style
+
+            else
+                model.style
+    in
+    { model | style = newStyle }
 
 
 phase : Model -> Phase
@@ -431,14 +541,3 @@ whoseTurn x =
 
     else
         B
-
-
-{-| Returns Just a when the Bool is true.
--}
-maybe : Bool -> a -> Maybe a
-maybe bool a =
-    if bool then
-        Just a
-
-    else
-        Nothing

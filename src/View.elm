@@ -1,10 +1,14 @@
 module View exposing (..)
 
+import Animation exposing (render, style)
+import Browser.Events exposing (onAnimationFrame)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import List.Extra
 import Morris exposing (..)
+import Svg exposing (text_)
+import Svg.Attributes exposing (fill, string)
 import Tests exposing (..)
 import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
@@ -14,7 +18,7 @@ import TypedSvg.Events exposing (..)
 import TypedSvg.Types exposing (..)
 
 
-view : Model -> Html Msg
+view : Model -> Html Morris.Msg
 view model =
     div
         [ Html.Attributes.style "font-family" "monospace"
@@ -22,36 +26,65 @@ view model =
         ]
         [ div [] [ viewBoard model ]
         , button [ Html.Events.onClick Reset ] [ Html.text "New Game" ]
-        , div []
-            [ Html.text
-                (if isWin model then
-                    "WIN"
-
-                 else
-                    " "
-                )
-            ]
         , viewTests
+        , svg
+            [ TypedSvg.Attributes.height (px 1000)
+            , TypedSvg.Attributes.width (px 1000)
+            ]
+            [ Svg.text_
+                [ x (px 0)
+                , y (px 0)
+                , Svg.Attributes.string "Hello"
+                ]
+                []
+            ]
         ]
 
 
-viewBoard : Model -> Html Msg
+viewBoard : Model -> Html Morris.Msg
 viewBoard model =
     let
+        -- Returns the player on the location.
         get n =
             model.board |> List.Extra.getAt (locationIndex n) |> Maybe.withDefault Empty
 
-        locationColor location =
+        -- Determine if the location is empty.
+        isOccupied location =
+            get location == Empty
+
+        -- Determine if the location is the desired one to move.
+        isSelected location =
             case model.moveInProgress of
                 FirstClick loc ->
                     if (location == loc) && (model.counter >= 18) then
-                        Fill yellow
+                        True
 
                     else
-                        playerColor (get location)
+                        False
 
                 _ ->
-                    playerColor (get location)
+                    False
+
+        gT18Counter =
+            model.counter > 18
+
+        lT3PiecesFor player =
+            List.length (playerLocations player model.board) < 3
+
+        noValidMovesFor player =
+            not
+                (playerLocations player model.board
+                    |> List.any
+                        (\playerLoc ->
+                            playerLocations Empty model.board
+                                |> List.any
+                                    (\emptyLoc -> allowedMove playerLoc emptyLoc)
+                        )
+                )
+
+        isLoserPiece location =
+            gT18Counter
+                && (lT3PiecesFor (get location) || noValidMovesFor (get location))
 
         coordinates =
             { c1 = 20, c2 = 80, c3 = 140, c4 = 200, c5 = 260, c6 = 320, c7 = 380 }
@@ -102,8 +135,19 @@ viewBoard model =
                         circle
                             [ cx (px x)
                             , cy (px y)
-                            , r (px 12)
-                            , fill <| locationColor xyz
+                            , if isOccupied xyz then
+                                r (px 10)
+
+                              else
+                                r (px 17)
+                            , if isSelected xyz then
+                                TypedSvg.Attributes.strokeWidth (px 5)
+
+                              else
+                                TypedSvg.Attributes.strokeWidth (px 0)
+                            , TypedSvg.Color.rgb 255 255 77
+                                |> TypedSvg.Attributes.stroke
+                            , TypedSvg.Attributes.fill <| playerColor (get xyz)
                             , TypedSvg.Events.onClick (Click xyz)
                             ]
                             []
@@ -119,7 +163,7 @@ viewBoard model =
             , TypedSvg.Attributes.height (px 360)
             , strokeWidth (px 5)
             , noFill
-            , stroke black
+            , stroke <| TypedSvg.Color.rgb 51 0 0
             ]
             []
          , rect
@@ -129,7 +173,7 @@ viewBoard model =
             , TypedSvg.Attributes.height (px 240)
             , strokeWidth (px 5)
             , noFill
-            , stroke black
+            , stroke <| TypedSvg.Color.rgb 51 0 0
             ]
             []
          , rect
@@ -139,7 +183,7 @@ viewBoard model =
             , TypedSvg.Attributes.height (px 120)
             , strokeWidth (px 5)
             , noFill
-            , stroke black
+            , stroke <| TypedSvg.Color.rgb 51 0 0
             ]
             []
          , line
@@ -148,7 +192,7 @@ viewBoard model =
             , x2 (px coordinates.c4)
             , y2 (px coordinates.c3)
             , strokeWidth (px 5)
-            , stroke black
+            , stroke <| TypedSvg.Color.rgb 51 0 0
             ]
             []
          , line
@@ -157,7 +201,7 @@ viewBoard model =
             , x2 (px coordinates.c3)
             , y2 (px coordinates.c4)
             , strokeWidth (px 5)
-            , stroke black
+            , stroke <| TypedSvg.Color.rgb 51 0 0
             ]
             []
          , line
@@ -166,7 +210,7 @@ viewBoard model =
             , x2 (px coordinates.c7)
             , y2 (px coordinates.c4)
             , strokeWidth (px 5)
-            , stroke black
+            , stroke <| TypedSvg.Color.rgb 51 0 0
             ]
             []
          , line
@@ -175,16 +219,47 @@ viewBoard model =
             , x2 (px coordinates.c4)
             , y2 (px coordinates.c7)
             , strokeWidth (px 5)
-            , stroke black
+            , stroke <| TypedSvg.Color.rgb 51 0 0
             ]
             []
-         , TypedSvg.text_
-            [ cx (px 200)
-            , cy (px 200)
-            ]
-            [ TypedSvg.Core.text "HH" ]
+         , circle
+            (Animation.render model.style
+                ++ [ cx (px 510)
+                   , r (px 14)
+                   , TypedSvg.Attributes.fill <| Fill purple
+                   ]
+            )
+            []
          ]
             ++ (allLocations |> List.map circ)
+            ++ [ rect
+                    [ x (px 480)
+                    , y (px 80)
+                    , rx (px 30)
+                    , ry (px 32)
+                    , TypedSvg.Attributes.width (px 60)
+                    , TypedSvg.Attributes.height (px 240)
+                    , Svg.Attributes.fill <| "none "
+                    , TypedSvg.Attributes.strokeWidth (px 3)
+                    , TypedSvg.Attributes.stroke <| black
+                    ]
+                    []
+               , circle
+                    [ cx (px 580)
+                    , cy (px 110)
+                    , r (px 17)
+                    , TypedSvg.Color.rgb 222 184 135
+                        |> Fill
+                        |> TypedSvg.Attributes.fill
+                    ]
+                    []
+               , circle
+                    [ cx (px 580)
+                    , cy (px 290)
+                    , r (px 17)
+                    ]
+                    []
+               ]
         )
 
 
@@ -192,16 +267,18 @@ playerColor : Player -> Fill
 playerColor player =
     case player of
         Empty ->
-            Fill black
+            Fill <| TypedSvg.Color.rgb 51 0 0
 
         W ->
-            Fill red
+            TypedSvg.Color.rgb 222 184 135
+                |> Fill
 
         B ->
-            Fill green
+            TypedSvg.Color.rgb 0 0 0
+                |> Fill
 
 
-viewTests : Html Msg
+viewTests : Html Morris.Msg
 viewTests =
     let
         pass =
