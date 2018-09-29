@@ -187,8 +187,6 @@ mkBoard ws bs =
             )
 
 
-{-| The initial model.
--}
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { board = List.repeat 24 Empty
