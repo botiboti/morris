@@ -147,6 +147,8 @@ corners =
             )
 
 
+{-| All the midpoints of the board.
+-}
 middles : List Location
 middles =
     allLocations
@@ -161,32 +163,6 @@ subscriptions model =
     Animation.subscription Animate [ model.style ]
 
 
-getLocation : Int -> Location
-getLocation i =
-    case getAt i allLocations of
-        Just a ->
-            a
-
-        Nothing ->
-            ( X1, Y1, Z1 )
-
-
-mkBoard : List Location -> List Location -> List Player
-mkBoard ws bs =
-    List.repeat 24 Empty
-        |> indexedMap
-            (\i l ->
-                if member (getLocation i) ws then
-                    W
-
-                else if member (getLocation i) bs then
-                    B
-
-                else
-                    Empty
-            )
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { board = List.repeat 24 Empty
@@ -198,6 +174,8 @@ init _ =
     )
 
 
+{-| Initial animation style.
+-}
 initStyle =
     Animation.style
         [ Animation.attr "cy" 200 "px" ]
@@ -349,6 +327,33 @@ update msg model =
             Tuple.first (init ())
 
 
+{-| Determine if a player has no legal moves or has < 2 players.
+-}
+isWin : Model -> Bool
+isWin model =
+    let
+        gT18Counter =
+            model.counter > 18
+
+        lT3PiecesFor player =
+            length (playerLocations player model.board) < 3
+
+        noValidMovesFor player =
+            not
+                (playerLocations player model.board
+                    |> any
+                        (\playerLoc ->
+                            playerLocations Empty model.board
+                                |> any
+                                    (\emptyLoc -> allowedMove playerLoc emptyLoc)
+                        )
+                )
+    in
+    gT18Counter && (lT3PiecesFor W || lT3PiecesFor B || noValidMovesFor W || noValidMovesFor B)
+
+
+{-| The animation visualizing the winner.
+-}
 winnerAnimation : Model -> Model
 winnerAnimation model =
     let
@@ -399,6 +404,8 @@ winnerAnimation model =
     { model | style = newStyle }
 
 
+{-| Determine the three phases of the game.
+-}
 phase : Model -> Phase
 phase { counter, board } =
     if counter < 18 then
@@ -409,31 +416,6 @@ phase { counter, board } =
 
     else
         Fly
-
-
-{-| Determine if a player has no legal moves or has < 2 players.
--}
-isWin : Model -> Bool
-isWin model =
-    let
-        gT18Counter =
-            model.counter > 18
-
-        lT3PiecesFor player =
-            length (playerLocations player model.board) < 3
-
-        noValidMovesFor player =
-            not
-                (playerLocations player model.board
-                    |> any
-                        (\playerLoc ->
-                            playerLocations Empty model.board
-                                |> any
-                                    (\emptyLoc -> allowedMove playerLoc emptyLoc)
-                        )
-                )
-    in
-    gT18Counter && (lT3PiecesFor W || lT3PiecesFor B || noValidMovesFor W || noValidMovesFor B)
 
 
 {-| Determine if the location is in a mill
