@@ -236,41 +236,52 @@ update msg model =
             , style = model.style
             }
 
+        winnerMove move =
+            if isWin <| move then
+                winnerAnimation <| move
+
+            else
+                move
+
         selectPiece target =
             { model | moveInProgress = FirstClick target }
 
         movePiece loc target =
-            if
+            (if
                 model.board
                     |> updateBoard loc Empty
                     |> updateBoard target currentPlayer
                     |> playerLocations currentPlayer
                     |> isMill target
-            then
+             then
                 { board = updateBoard target currentPlayer (updateBoard loc Empty model.board)
                 , moveInProgress = SecondClick loc target
                 , counter = model.counter
                 , style = model.style
                 }
 
-            else
+             else
                 { board = updateBoard target currentPlayer (updateBoard loc Empty model.board)
                 , moveInProgress = NoClick
                 , counter = model.counter + 1
                 , style = model.style
                 }
+            )
+                |> winnerMove
 
         capturePiece target =
-            if validCapture target model then
+            (if validCapture target model then
                 updateWithPlayer target Empty
 
-            else
+             else
                 model
+            )
+                |> winnerMove
     in
     case msg of
         Click target ->
             if isWin model then
-                winnerAnimation model
+                model
 
             else
                 case ( phase model, model.moveInProgress ) of
