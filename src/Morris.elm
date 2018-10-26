@@ -219,36 +219,39 @@ update msg model =
             { model | moveInProgress = FirstClick target }
 
         movePiece loc target =
-            (if
+            if
                 model.board
                     |> updateBoard loc Empty
                     |> updateBoard target currentPlayer
                     |> playerLocations currentPlayer
                     |> isMill target
-             then
+            then
                 { board = updateBoard target currentPlayer (updateBoard loc Empty model.board)
                 , moveInProgress = SecondClick loc target
                 , counter = model.counter
                 , style = model.style
                 }
 
-             else
+            else
                 { board = updateBoard target currentPlayer (updateBoard loc Empty model.board)
                 , moveInProgress = NoClick
                 , counter = model.counter + 1
                 , style = model.style
                 }
-            )
-                |> winnerMove
 
         capturePiece target =
-            (if validCapture target model then
+            if validCapture target model then
                 updateWithPlayer target Empty
 
-             else
+            else
                 model
-            )
-                |> winnerMove
+
+        selectPieceToMove target =
+            if isCurrentPlayer target then
+                selectPiece target
+
+            else
+                model
     in
     case msg of
         Click target ->
@@ -256,67 +259,59 @@ update msg model =
                 model
 
             else
-                case ( phase model, model.moveInProgress ) of
-                    ( Place, NoClick ) ->
-                        if isEmptyLocation target then
-                            if isMill target <| [ target ] ++ playerLocations currentPlayer model.board then
-                                { board = updateBoard target currentPlayer model.board
-                                , moveInProgress = FirstClick target
-                                , counter = model.counter
-                                , style = model.style
-                                }
+                winnerMove <|
+                    case ( phase model, model.moveInProgress ) of
+                        ( Place, NoClick ) ->
+                            if isEmptyLocation target then
+                                if isMill target <| [ target ] ++ playerLocations currentPlayer model.board then
+                                    { model
+                                        | board = updateBoard target currentPlayer model.board
+                                        , moveInProgress = FirstClick target
+                                    }
+
+                                else
+                                    updateWithPlayer target currentPlayer
 
                             else
-                                updateWithPlayer target currentPlayer
+                                model
 
-                        else
+                        ( Place, FirstClick loc ) ->
+                            capturePiece target
+
+                        ( Move, NoClick ) ->
+                            selectPieceToMove target
+
+                        ( Move, FirstClick loc ) ->
+                            if isCurrentPlayer target then
+                                selectPiece target
+
+                            else if allowedMove loc target && isEmptyLocation target then
+                                movePiece loc target
+
+                            else
+                                model
+
+                        ( Move, SecondClick loc1 loc2 ) ->
+                            capturePiece target
+
+                        ( Fly, NoClick ) ->
+                            selectPieceToMove target
+
+                        ( Fly, FirstClick loc ) ->
+                            if isCurrentPlayer target then
+                                selectPiece target
+
+                            else if isEmptyLocation target then
+                                movePiece loc target
+
+                            else
+                                model
+
+                        ( Fly, SecondClick loc1 loc2 ) ->
+                            capturePiece target
+
+                        _ ->
                             model
-
-                    ( Place, FirstClick loc ) ->
-                        capturePiece target
-
-                    ( Move, NoClick ) ->
-                        if isCurrentPlayer target then
-                            selectPiece target
-
-                        else
-                            model
-
-                    ( Move, FirstClick loc ) ->
-                        if isCurrentPlayer target then
-                            selectPiece target
-
-                        else if allowedMove loc target && isEmptyLocation target then
-                            movePiece loc target
-
-                        else
-                            model
-
-                    ( Move, SecondClick loc1 loc2 ) ->
-                        capturePiece target
-
-                    ( Fly, NoClick ) ->
-                        if isCurrentPlayer target then
-                            selectPiece target
-
-                        else
-                            model
-
-                    ( Fly, FirstClick loc ) ->
-                        if isCurrentPlayer target then
-                            selectPiece target
-
-                        else if isEmptyLocation target then
-                            movePiece loc target
-
-                        else
-                            model
-
-                    ( Fly, SecondClick loc1 loc2 ) ->
-                        capturePiece target
-
-                    _ ->
-                        model
 
         Animate animMsg ->
             { model
@@ -333,7 +328,7 @@ isWin : Model -> Bool
 isWin model =
     let
         gT18Counter =
-            model.counter > 18
+            model.counter >= 18
 
         lT3PiecesFor player =
             length (playerLocations player model.board) < 3
@@ -358,7 +353,7 @@ winnerAnimation : Model -> Model
 winnerAnimation model =
     let
         gT18Counter =
-            model.counter > 18
+            model.counter >= 18
 
         lT3PiecesFor player =
             length (playerLocations player model.board) < 3

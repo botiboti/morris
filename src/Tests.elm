@@ -66,8 +66,15 @@ tests =
             , counter = 6
             , style = (Tuple.first (init ())).style
             }
+
+        mBlockedPlayer2 =
+            { board = mkBoard [ ( X1, Y1, Z1 ), ( X3, Y1, Z1 ), ( X3, Y3, Z1 ), ( X1, Y3, Z1 ), ( X1, Y1, Z3 ), ( X3, Y1, Z3 ), ( X3, Y3, Z3 ), ( X1, Y3, Z3 ) ] [ ( X2, Y1, Z1 ), ( X3, Y2, Z1 ), ( X2, Y3, Z1 ), ( X1, Y2, Z1 ), ( X2, Y1, Z3 ), ( X3, Y2, Z3 ), ( X2, Y3, Z3 ), ( X1, Y2, Z3 ), ( X3, Y2, Z2 ) ]
+            , moveInProgress = NoClick
+            , counter = 18
+            , style = (Tuple.first (init ())).style
+            }
     in
-    [ -- **Completing a mill
+    [ -- Completing a mill
       update (Click ( X1, Y1, Z1 )) mFourPieces == mFirstMill
 
     -- Capturing a piece
@@ -94,7 +101,7 @@ tests =
     -- Moving a piece on the same location is not allowed
     , allowedMove ( X2, Y1, Z1 ) ( X2, Y1, Z1 ) == False
 
-    -- **A valid capture
+    -- A valid capture
     , validCapture ( X3, Y1, Z1 ) mAnOrdinarySituation
 
     -- Capturing a piece in a mill is not allowed, unless there is no other option
@@ -103,11 +110,14 @@ tests =
     -- No one has won yet.
     , isWin mAnOrdinarySituation == False
 
-    -- **When a player has < 3 pieces is a win condition
+    -- When a player has < 3 pieces is a win condition
     , isWin mLessThan3Piece
 
     -- When a player has no allowed moves is a win condition
     , isWin mBlockedPlayer
+
+    -- Another blocked player config.
+    , isWin mBlockedPlayer2
 
     -- When a mill is formed the only legal move is to capture a piece.
     , update (Click ( X1, Y3, Z2 )) mJustCapture == mJustCapture
